@@ -1,38 +1,62 @@
 # vue_printer
 
-This template should help get you started developing with Vue 3 in Vite.
+这是一个基于VUE的打印机模块，主要的功能就是连通打单机，获取订单数据整合后发送给打单机在线打单，支持单份打印双份打印，同个订单同时打印两份不同形式的
 
-## Recommended IDE Setup
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## QA
 
-## Recommended Browser Setup
+### 为什么开台？
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+不想一个月交大几十元的费用，不多，但是我只是想打个单而已，就这么简单，然后这个项目如果没有人提需求，大概我只会照顾做直播拆卡这个群体的主播
 
-## Customize configuration
+### 为什么不用官方API
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+认证不仅仅只是要提交软著，想成为服务商太麻烦了，而且店铺资质不适格，不然也不用这么蹩脚的做了，这算是目前你们在市场上找到同类解决方案的集大成者了
 
-## Project Setup
+### 稳定性你想怎么做？
 
-```sh
-npm install
-```
+我的打印方案会使用双协议保底，只要你网络炸了后面恢复了，虽然会慢个几秒，但是一定能打出来，不用你手调，对吧？尤其是单播主播，这个痛点你们是有体会的
 
-### Compile and Hot-Reload for Development
+### 不能本地吗？
 
-```sh
-npm run dev
-```
+复杂啊哥姐，我也想做本地的，但是我首先有换电脑（打印机那台的）的需求，其次如果双部署的话，在这个基础上做内网通讯你想技术上不稳定的东西是不是很多？本来就是为爱发电一会整成为爱挨骂了那我不成M了=。=
 
-### Compile and Minify for Production
+### 做云端数据要上传吗？
 
-```sh
-npm run build
-```
+不信任但是又想用是吧？那你就开个店铺子账号，只能看到订单的就行，基本功能就有了，就这么简单咯
+
+### 插件怎么运作的？
+
+登录账号，选择开始工作，可能我会设计一个隐私告知这样，告诉你什么数据会和服务器通信，让你自己考虑是否信任之类的，然后订单的title和内容然后谁下的单这些的就是订单那个接口的数据就会传给云端，然后服务器处理完下发到你的打印机这样的
+
+### 不用了能不能删除我自己的数据？
+
+求之不得，你不用了最好申请注销账号给我数据库腾个地我还省得以后做分库分表了
+
+### 关于删除数据
+
+数据太多了我也会清空的，账号长期不登录的我就直接sql选择某个月份以前的全部清除了，哦对了我这只是为了打单，所以我想根据大多平台的规则，下单后48小时没支付就取消订单了，和打单机也没啥关系了，这部分数据我这删了也不影响打单，我只是这里说明下我会删这部分数据的，不然我没收钱库库往里搭数据库的钱，你心疼下我好不好？
+
+### 干嘛不直接用付费的？
+
+那大家很有钱了，我面临的情况是电脑可能换，打印机可能和直播电脑不是同一台或者同一个地方，或者一个工作室只有一个打单机或多个打单机我需要A打印机打主播的准备单（非粘性），B打印机打装袋用的贴单（粘性），如果今天是同时打同时发就会有C打印机来打标准抖店或者别的平台的单子，那么好，C的动作我可以调用抖店打印来操作，AB两个还是得自己做不是，目前我自己付费的方案（我买别人的）是做不到的，当然贵的可以，但是真的很贵本来利润就不多，不然我也不会开台做这个了，主要真的没有免费的给我用
+
+### 为什么用爱发电不赚吗？
+
+呐，开这种台肯定是方便我自己了，如果与此同时也能让有需要的人能享受到方便真的很不错！况且这也不是我第一个公共项目了，而且很多时候就我一个人在做啊，我Ok的
+
+### 以后做付费吗？没钱倒台怎么办？
+
+我想想……如果以现在同类产品的ultimate版本为价格基准的话，大概6个甚至更少的付费用户这服务器就能开一年了嘻嘻，做程序这么久成本这块我卡的还是很死的
+
+### 给攻击怎么办？
+
+Emm，就是给D就死了呗，不过这项目大店也不会用我这个产品，不竞争的话不至于，主要是解决我们这样小店铺长期流血的问题，能省一点是一点，有能力了再弄好的哈哈
+
+### 如果我付费，可以多得到什么？
+
+MySQL你的数据不删好不好？
+
+### 可以定制开发吗？
+
+问我呗，不过先提ISSUE吧？说不定有些功能我也没想到
