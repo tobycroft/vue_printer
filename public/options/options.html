@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Printer - Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Monaco', 'Consolas', monospace;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #45a049;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .template-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+
+    .template-card:hover {
+      border-color: #4CAF50;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+    }
+
+    .template-card h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .template-card p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .template-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .template-actions button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-edit {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .btn-edit:hover {
+      background: #bbdefb;
+    }
+
+    .btn-delete {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .btn-delete:hover {
+      background: #ffcdd2;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .modal-close:hover {
+      color: #333;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      background: #333;
+      color: white;
+      border-radius: 8px;
+      z-index: 2000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success {
+      background: #4CAF50;
+    }
+
+    .toast.error {
+      background: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🖨️ Vue Printer Settings</h1>
+      <p>Configure C-LODOP print templates and settings</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>📄</span> Template Management
+      </div>
+      <div id="template-container" class="template-grid">
+        <div class="empty-state">
+          <p>Loading templates...</p>
+        </div>
+      </div>
+      <div style="margin-top: 20px;">
+        <button class="btn" id="btn-create-template">+ Create New Template</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>⚙️</span> Default Settings
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="default-printer">Default Printer</label>
+          <select id="default-printer">
+            <option value="">Select Printer...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="paper-size">Paper Size</label>
+          <select id="paper-size">
+            <option value="A4">A4</option>
+            <option value="A3">A3</option>
+            <option value="Letter">Letter</option>
+            <option value="Legal">Legal</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="orientation">Orientation</label>
+          <select id="orientation">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="copies">Copies</label>
+          <input type="number" id="copies" value="1" min="1" max="100">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>🔧</span> C-LODOP Connection
+      </div>
+      <div class="form-group">
+        <label for="lodop-url">C-LODOP Service URL</label>
+        <input type="text" id="lodop-url" value="https://localhost:8443/CLodopfuncs.js" readonly>
+      </div>
+      <div class="form-group">
+        <label>Connection Status</label>
+        <div id="connection-status" style="padding: 10px; background: #f5f5f5; border-radius: 6px;">
+          Checking...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="template-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Create Template</h2>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <div class="form-group">
+        <label for="template-name">Template Name *</label>
+        <input type="text" id="template-name" placeholder="e.g., Invoice Template">
+      </div>
+      <div class="form-group">
+        <label for="template-description">Description</label>
+        <input type="text" id="template-description" placeholder="Brief description...">
+      </div>
+      <div class="form-group">
+        <label for="template-content">HTML Template Content *</label>
+        <textarea id="template-content" placeholder="<html>
+<body>
+  <h1>{{title}}</h1>
+  <p>{{content}}</p>
+  <div>{{data}}</div>
+</body>
+</html>"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button class="btn" id="modal-save">Save Template</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Printer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 350px;
+      min-height: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f5f5;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .status-bar {
+      padding: 12px 20px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ddd;
+    }
+
+    .status-indicator.connected {
+      background: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    }
+
+    .status-indicator.disconnected {
+      background: #f44336;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .template-list {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .template-item {
+      padding: 15px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .template-item:last-child {
+      border-bottom: none;
+    }
+
+    .template-item:hover {
+      background: #f9f9f9;
+    }
+
+    .template-item.selected {
+      background: #e8f5e9;
+      border-left: 3px solid #4CAF50;
+    }
+
+    .template-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .template-desc {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: #999;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #45a049;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #4CAF50;
+      color: #4CAF50;
+    }
+
+    .btn-outline:hover {
+      background: #e8f5e9;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .action-buttons .btn {
+      flex: 1;
+      text-align: center;
+    }
+
+    .footer {
+      padding: 15px 20px;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+    }
+
+    .footer a {
+      color: #4CAF50;
+      text-decoration: none;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🖨️ Vue Printer</h1>
+    <p>C-LODOP Print Integration</p>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-indicator disconnected" id="status-indicator"></div>
+    <span class="status-text" id="status-text">Checking C-LODOP...</span>
+  </div>
+
+  <div class="content">
+    <div class="section">
+      <div class="section-title">Quick Print</div>
+      <button class="btn" id="print-current" style="width: 100%;">
+        Print Current Page
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Templates</div>
+      <div class="template-list" id="template-list">
+        <div class="empty-state">
+          <p>No templates</p>
+          <small>Create templates in options</small>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-outline" id="btn-options">Options</button>
+        <button class="btn btn-outline" id="btn-refresh">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="#" id="open-options">Open Full Settings →</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
