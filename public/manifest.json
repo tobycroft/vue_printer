@@ -19,9 +19,7 @@
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "16": "icons/icon16.svg"
     },
     "default_title": "Vue Printer"
   },
@@ -33,9 +31,7 @@
     }
   ],
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "icons/icon16.svg"
   },
   "options_page": "options/options.html",
   "web_accessible_resources": [
