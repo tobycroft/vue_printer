@@ -5,33 +5,9 @@ let lodopPluginInstalled = false;
 
 async function checkLodopInstallation() {
   return new Promise((resolve) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = 'about:blank';
-    document.body.appendChild(iframe);
-
-    const checkInterval = setInterval(() => {
-      try {
-        if (iframe.contentWindow && iframe.contentWindow.getLodop) {
-          clearInterval(checkInterval);
-          document.body.removeChild(iframe);
-          lodopPluginInstalled = true;
-          resolve(true);
-        }
-      } catch (e) {
-        clearInterval(checkInterval);
-        document.body.removeChild(iframe);
-        resolve(false);
-      }
-    }, 100);
-
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe);
-      }
-      resolve(false);
-    }, 5000);
+    // Service Worker中不能使用document，直接返回false
+    // 实际检查应该在content script或popup中进行
+    resolve(false);
   });
 }
 
@@ -39,6 +15,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'checkLodopStatus') {
     checkLodopInstallation().then(installed => {
       sendResponse({ installed, url: LODOP_SCRIPT_URL });
+    }).catch(error => {
+      console.error('检查LODOP状态失败:', error);
+      sendResponse({ installed: false, url: LODOP_SCRIPT_URL, error: error.message });
     });
     return true;
   }
