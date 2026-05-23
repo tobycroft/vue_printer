@@ -192,9 +192,24 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Vue Printer Extension installed');
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  // 在新标签页打开配置页面
-  chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html') });
+chrome.action.onClicked.addListener(async (tab) => {
+  // 检查用户是否已登录
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data');
+    const userData = result.vue_printer_user_data;
+    
+    if (userData && Date.now() < userData.expiresAt) {
+      // 已登录，打开配置页面
+      chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html') });
+    } else {
+      // 未登录，打开登录页面
+      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
+    }
+  } catch (error) {
+    console.error('检查登录状态失败:', error);
+    // 出错时默认打开登录页面
+    chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
+  }
 });
 
 export { LODOP_SCRIPT_URL, LODOP_PORT };
