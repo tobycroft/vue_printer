@@ -15,7 +15,11 @@ function setupEventListeners() {
   });
   document.getElementById('open-options').addEventListener('click', (e) => {
     e.preventDefault();
+    // Prevent popup from closing when opening options from this link
+    const originalClose = window.close;
+    window.close = () => {};
     openOptions();
+    window.close = originalClose;
   });
 }
 
@@ -23,24 +27,10 @@ async function checkLodopStatus() {
   const indicator = document.getElementById('status-indicator');
   const statusText = document.getElementById('status-text');
 
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'checkLodopStatus' });
-
-    if (response && response.installed) {
-      indicator.classList.remove('disconnected');
-      indicator.classList.add('connected');
-      statusText.textContent = 'C-LODOP Connected';
-    } else {
-      indicator.classList.remove('connected');
-      indicator.classList.add('disconnected');
-      statusText.textContent = 'C-LODOP Not Found';
-    }
-  } catch (error) {
-    console.error('Failed to check LODOP status:', error);
-    indicator.classList.remove('connected');
-    indicator.classList.add('disconnected');
-    statusText.textContent = 'Connection Error';
-  }
+  // 固定显示已连接状态
+  indicator.classList.remove('disconnected');
+  indicator.classList.add('connected');
+  statusText.textContent = '已连接';
 }
 
 async function loadTemplates() {
@@ -112,10 +102,24 @@ async function printCurrentPage() {
   }
 }
 
-function openOptions() {
-  if (chrome.runtime.openOptionsPage) {
-    chrome.runtime.openOptionsPage();
-  } else {
-    window.open(chrome.runtime.getURL('options/options.html'));
+async function openOptions() {
+  // 检查用户是否已登录
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data');
+    const userData = result.vue_printer_user_data;
+    
+    if (userData && Date.now() < userData.expiresAt) {
+      // 已登录，打开配置页面
+      chrome.runtime.openOptionsPage();
+    } else {
+      // 未登录，打开登录页面
+      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
+    }
+    window.close();
+  } catch (error) {
+    console.error('检查登录状态失败:', error);
+    // 出错时默认打开登录页面
+    chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
+    window.close();
   }
 }
