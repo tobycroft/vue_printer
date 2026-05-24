@@ -1,4 +1,4 @@
-// API配置文件
+// API配置文件 - 匹配go_printer后端接口
 const CONFIG = {
   // 默认API地址
   API_BASE_URL: 'http://127.0.0.1',
@@ -10,14 +10,15 @@ const CONFIG = {
   TIMEOUT: 10000,
   
   // 验证码接口
-  CAPTCHA_URL: '/captcha',
+  CAPTCHA: {
+    CREATE: '/v1/index/captcha/create',
+    VERIFY: '/v1/index/captcha/verify'
+  },
   
   // 认证接口
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    REFRESH_TOKEN: '/auth/refresh',
-    LOGOUT: '/auth/logout'
+    LOGIN: '/v1/user/login/',
+    REGISTER: '/v1/user/register/'
   },
   
   // 其他接口

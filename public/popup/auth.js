@@ -1,5 +1,5 @@
 let isLoginMode = true;
-let captchaUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA_URL;
+let captchaIdent = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAuthStatus();
@@ -52,9 +52,36 @@ function toggleAuthMode() {
   refreshCaptcha();
 }
 
-function refreshCaptcha() {
-  const captchaImg = document.getElementById('captcha-img');
-  captchaImg.src = `${captchaUrl}?timestamp=${Date.now()}`;
+async function refreshCaptcha() {
+  try {
+    const response = await fetch(CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.code === 0) {
+      captchaIdent = data.data.ident;
+      // 生成验证码图片（假设后端返回的code是验证码内容，这里用文本显示）
+      const captchaImg = document.getElementById('captcha-img');
+      captchaImg.alt = `验证码: ${data.data.code}`;
+      // 创建一个简单的验证码显示
+      captchaImg.src = `data:image/svg+xml;base64,${btoa(`
+        <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="#f0f0f0"/>
+          <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">${data.data.code}</text>
+        </svg>
+      `)}`;
+    } else {
+      showMessage('获取验证码失败: ' + data.echo, 'error');
+    }
+  } catch (error) {
+    console.error('获取验证码失败:', error);
+    showMessage('网络错误，无法获取验证码', 'error');
+  }
 }
 
 async function handleSubmit(e) {
@@ -76,35 +103,66 @@ async function handleSubmit(e) {
     return;
   }
   
+  if (!captchaIdent) {
+    showMessage('请先获取验证码', 'error');
+    return;
+  }
+  
   const submitBtn = document.getElementById('auth-submit');
   submitBtn.disabled = true;
   submitBtn.textContent = '处理中...';
   
   try {
+    // 先验证验证码
+    const captchaResponse = await fetch(CONFIG.API_BASE_URL + CONFIG.CAPTCHA.VERIFY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ident: captchaIdent,
+        code: captcha
+      })
+    });
+    
+    const captchaData = await captchaResponse.json();
+    
+    if (captchaData.code !== 0) {
+      showMessage('验证码错误: ' + captchaData.echo, 'error');
+      refreshCaptcha();
+      return;
+    }
+    
+    // 验证码验证成功，执行登录/注册
     const apiUrl = CONFIG.API_BASE_URL + (isLoginMode ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER);
-    const response = await fetch(apiUrl, {
+    const authResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         username,
-        password,
-        captcha
+        password
       })
     });
     
-    const data = await response.json();
+    const authData = await authResponse.json();
     
-    if (response.ok && data.success) {
+    if (authData.code === 0) {
       // 保存用户数据
+      const userData = {
+        uid: authData.data.uid,
+        username: username,
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7天有效期
+      };
+      
+      // 登录成功才保存token
+      if (isLoginMode && authData.data.token) {
+        userData.token = authData.data.token;
+      }
+      
       await chrome.storage.local.set({
-        vue_printer_user_data: {
-          uid: data.data.uid,
-          token: data.data.token,
-          username: username,
-          expiresAt: data.data.expiresAt ? new Date(data.data.expiresAt).getTime() : Date.now() + 7 * 24 * 60 * 60 * 1000
-        }
+        vue_printer_user_data: userData
       });
       
       showMessage(isLoginMode ? '登录成功！' : '注册成功！', 'success');
@@ -114,7 +172,7 @@ async function handleSubmit(e) {
         window.location.href = 'popup.html';
       }, 1000);
     } else {
-      showMessage(data.message || (isLoginMode ? '登录失败' : '注册失败'), 'error');
+      showMessage(authData.echo || (isLoginMode ? '登录失败' : '注册失败'), 'error');
       refreshCaptcha();
     }
   } catch (error) {
