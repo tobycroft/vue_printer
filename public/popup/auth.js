@@ -23,6 +23,8 @@ async function checkAuthStatus() {
 
 function setupFormListeners() {
   document.getElementById('auth-form').addEventListener('submit', handleSubmit);
+  document.getElementById('btn-refresh-captcha').addEventListener('click', refreshCaptcha);
+  document.getElementById('btn-toggle-mode').addEventListener('click', toggleAuthMode);
 }
 
 function toggleAuthMode() {
