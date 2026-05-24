@@ -58,9 +58,6 @@ async function refreshCaptcha() {
     let apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE;
     let response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       mode: 'cors',
       cache: 'no-cache'
     });
@@ -74,9 +71,6 @@ async function refreshCaptcha() {
         try {
           response = await fetch(urlWithPort, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
             mode: 'cors',
             cache: 'no-cache'
           });
@@ -175,21 +169,20 @@ async function handleSubmit(e) {
     const apiUrl = CONFIG.API_BASE_URL + (isLoginMode ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER);
     console.log(`正在调用${isLoginMode ? '登录' : '注册'}接口:`, apiUrl);
     
-    const requestData = {
-      username,
-      password,
-      ident: captchaIdent,
-      code: captcha
-    };
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    formData.append('ident', captchaIdent);
+    formData.append('code', captcha);
     
-    console.log('请求参数:', requestData);
+    console.log('请求参数:');
+    for (const [key, value] of formData.entries()) {
+      console.log(`  ${key}: ${value}`);
+    }
     
     const authResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestData)
+      body: formData
     });
     
     console.log('接口响应状态:', authResponse.status, authResponse.statusText);
