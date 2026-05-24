@@ -94,7 +94,18 @@ async function refreshCaptcha() {
     const data = await response.json();
     
     if (data.code === 0) {
+      // 检查返回的数据结构
+      if (!data.data || !data.data.ident || !data.data.code) {
+        showMessage('验证码数据格式错误', 'error');
+        return;
+      }
+      
       captchaIdent = data.data.ident;
+      console.log('获取验证码成功:', {
+        ident: captchaIdent,
+        code: data.data.code
+      });
+      
       // 生成验证码图片（假设后端返回的code是验证码内容，这里用文本显示）
       const captchaImg = document.getElementById('captcha-img');
       captchaImg.alt = `验证码: ${data.data.code}`;
@@ -106,7 +117,7 @@ async function refreshCaptcha() {
         </svg>
       `)}`;
     } else {
-      showMessage('获取验证码失败: ' + data.echo, 'error');
+      showMessage('获取验证码失败: ' + (data.echo || '未知错误'), 'error');
     }
   } catch (error) {
     console.error('获取验证码失败:', error);
@@ -156,6 +167,18 @@ async function handleSubmit(e) {
     // 先验证验证码
     if (captchaIdent !== 'test-ident') {
       try {
+        // 检查ident是否有效
+        if (!captchaIdent || captchaIdent.trim() === '') {
+          showMessage('验证码标识无效，请刷新验证码', 'error');
+          refreshCaptcha();
+          return;
+        }
+        
+        console.log('验证码验证参数:', {
+          ident: captchaIdent,
+          code: captcha
+        });
+        
         const captchaResponse = await fetch(CONFIG.API_BASE_URL + CONFIG.CAPTCHA.VERIFY, {
           method: 'POST',
           headers: {
@@ -169,8 +192,10 @@ async function handleSubmit(e) {
         
         const captchaData = await captchaResponse.json();
         
+        console.log('验证码验证响应:', captchaData);
+        
         if (captchaData.code !== 0) {
-          showMessage('验证码错误: ' + captchaData.echo, 'error');
+          showMessage('验证码错误: ' + (captchaData.echo || '验证失败'), 'error');
           refreshCaptcha();
           return;
         }
