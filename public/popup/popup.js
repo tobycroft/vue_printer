@@ -1,10 +1,26 @@
 let selectedTemplate = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkAuthStatus();
   checkLodopStatus();
   loadTemplates();
   setupEventListeners();
 });
+
+async function checkAuthStatus() {
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data');
+    const userData = result.vue_printer_user_data;
+    
+    if (!userData || Date.now() > userData.expiresAt) {
+      // 未登录或Token过期，跳转到登录界面
+      window.location.href = 'auth.html';
+    }
+  } catch (error) {
+    console.error('检查登录状态失败:', error);
+    window.location.href = 'auth.html';
+  }
+}
 
 function setupEventListeners() {
   document.getElementById('print-current').addEventListener('click', printCurrentPage);
@@ -13,6 +29,7 @@ function setupEventListeners() {
     loadTemplates();
     checkLodopStatus();
   });
+  document.getElementById('btn-logout').addEventListener('click', handleLogout);
   document.getElementById('open-options').addEventListener('click', (e) => {
     e.preventDefault();
     // Prevent popup from closing when opening options from this link
@@ -21,6 +38,18 @@ function setupEventListeners() {
     openOptions();
     window.close = originalClose;
   });
+}
+
+async function handleLogout() {
+  if (confirm('确定要退出登录吗？')) {
+    try {
+      await chrome.storage.local.remove('vue_printer_user_data');
+      window.location.href = 'auth.html';
+    } catch (error) {
+      console.error('退出登录失败:', error);
+      alert('退出登录失败，请稍后重试');
+    }
+  }
 }
 
 async function checkLodopStatus() {
