@@ -215,6 +215,12 @@ async function handleSubmit(e) {
     
     // 验证码验证成功，执行登录/注册
     const apiUrl = CONFIG.API_BASE_URL + (isLoginMode ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER);
+    console.log(`正在调用${isLoginMode ? '登录' : '注册'}接口:`, apiUrl);
+    console.log('请求参数:', {
+      username,
+      password
+    });
+    
     const authResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -226,7 +232,10 @@ async function handleSubmit(e) {
       })
     });
     
+    console.log('接口响应状态:', authResponse.status, authResponse.statusText);
     const authData = await authResponse.json();
+    
+    console.log('登录/注册响应:', authData);
     
     if (authData.code === 0) {
       // 保存用户数据
