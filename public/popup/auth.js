@@ -164,72 +164,32 @@ async function handleSubmit(e) {
   submitBtn.textContent = '处理中...';
   
   try {
-    // 先验证验证码
-    if (captchaIdent !== 'test-ident') {
-      try {
-        // 检查ident是否有效
-        if (!captchaIdent || captchaIdent.trim() === '') {
-          showMessage('验证码标识无效，请刷新验证码', 'error');
-          refreshCaptcha();
-          return;
-        }
-        
-        console.log('验证码验证参数:', {
-          ident: captchaIdent,
-          code: captcha
-        });
-        
-        const captchaResponse = await fetch(CONFIG.API_BASE_URL + CONFIG.CAPTCHA.VERIFY, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ident: captchaIdent,
-            code: captcha
-          })
-        });
-        
-        const captchaData = await captchaResponse.json();
-        
-        console.log('验证码验证响应:', captchaData);
-        
-        if (captchaData.code !== 0) {
-          showMessage('验证码错误: ' + (captchaData.echo || '验证失败'), 'error');
-          refreshCaptcha();
-          return;
-        }
-      } catch (error) {
-        console.error('验证码验证失败:', error);
-        showMessage('验证码验证失败，请稍后重试', 'error');
-        refreshCaptcha();
-        return;
-      }
-    } else {
-      // 测试模式下，验证码固定为1234
-      if (captcha !== '1234') {
-        showMessage('验证码错误: 测试验证码为1234', 'error');
-        return;
-      }
+    // 检查ident是否有效
+    if (captchaIdent !== 'test-ident' && (!captchaIdent || captchaIdent.trim() === '')) {
+      showMessage('验证码标识无效，请刷新验证码', 'error');
+      refreshCaptcha();
+      return;
     }
     
-    // 验证码验证成功，执行登录/注册
+    // 直接执行登录/注册，将验证码参数发送到后端接口
     const apiUrl = CONFIG.API_BASE_URL + (isLoginMode ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER);
     console.log(`正在调用${isLoginMode ? '登录' : '注册'}接口:`, apiUrl);
-    console.log('请求参数:', {
+    
+    const requestData = {
       username,
-      password
-    });
+      password,
+      ident: captchaIdent,
+      code: captcha
+    };
+    
+    console.log('请求参数:', requestData);
     
     const authResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        username,
-        password
-      })
+      body: JSON.stringify(requestData)
     });
     
     console.log('接口响应状态:', authResponse.status, authResponse.statusText);
