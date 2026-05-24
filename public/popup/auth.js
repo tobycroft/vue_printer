@@ -1,5 +1,5 @@
 let isLoginMode = true;
-let captchaUrl = 'https://your-api-url/captcha';
+let captchaUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA_URL;
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAuthStatus();
@@ -81,7 +81,8 @@ async function handleSubmit(e) {
   submitBtn.textContent = '处理中...';
   
   try {
-    const response = await fetch('https://your-api-url/auth/' + (isLoginMode ? 'login' : 'register'), {
+    const apiUrl = CONFIG.API_BASE_URL + (isLoginMode ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER);
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
