@@ -11,14 +11,16 @@ async function getUserInfo(userData) {
   }
   
   try {
-    const apiUrl = 'http://127.0.0.1' + '/v1/user/info';
+    const apiUrl = 'http://127.0.0.1' + '/v1/user/info/';
+    
+    // 根据文档，用户信息接口是POST请求，使用multipart/form-data
+    const formData = new FormData();
+    formData.append('uid', userData.uid);
+    formData.append('token', userData.token);
     
     const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${userData.token}`,
-        'UID': userData.uid
-      },
+      method: 'POST',
+      body: formData,
       mode: 'cors',
       cache: 'no-cache'
     });
@@ -29,10 +31,14 @@ async function getUserInfo(userData) {
     
     const data = await response.json();
     
+    console.log('用户信息接口响应:', data);
+    
     if (data.code === 0 && data.data) {
+      console.log('解析到的用户数据:', data.data);
       return data.data;
     }
     
+    console.log('用户信息接口返回错误:', data.code, data.echo);
     return null;
   } catch (error) {
     console.error('获取用户信息失败:', error);
@@ -86,13 +92,26 @@ async function updateStatusDisplay() {
       // 尝试获取用户信息
       const userInfo = await getUserInfo(userData);
       
-      if (userInfo && userInfo.username) {
-        // 如果获取到用户信息，显示用户名
-        userStatusText.textContent = `已登录: ${userInfo.username}`;
-        // 更新本地存储的用户名
-        if (userData.username !== userInfo.username) {
-          userData.username = userInfo.username;
-          await chrome.storage.local.set({ vue_printer_user_data: userData });
+      console.log('用户信息:', userInfo);
+      console.log('本地用户数据:', userData);
+      
+      if (userInfo) {
+        // 检查返回的数据结构
+        if (userInfo.username) {
+          // 如果获取到用户名，显示用户名
+          userStatusText.textContent = `已登录: ${userInfo.username}`;
+          // 更新本地存储的用户名
+          if (userData.username !== userInfo.username) {
+            userData.username = userInfo.username;
+            await chrome.storage.local.set({ vue_printer_user_data: userData });
+          }
+        } else if (typeof userInfo === 'object') {
+          // 如果是对象但没有username字段，显示所有键值对
+          const userInfoStr = Object.entries(userInfo).map(([key, value]) => `${key}: ${value}`).join(', ');
+          userStatusText.textContent = `已登录: ${userInfoStr}`;
+        } else {
+          // 如果是其他类型，直接显示
+          userStatusText.textContent = `已登录: ${userInfo}`;
         }
       } else if (userData.username) {
         // 如果本地有用户名缓存，显示缓存的用户名
