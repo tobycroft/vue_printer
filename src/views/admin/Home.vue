@@ -85,9 +85,8 @@ const handleSettings = () => {
 <style scoped>
 .home-container {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .welcome-card {
