@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import { writeFileSync, mkdirSync, existsSync, cpSync, renameSync } from 'fs'
+import { writeFileSync, mkdirSync, existsSync, cpSync, renameSync, readFileSync } from 'fs'
 
 function copyNonHtmlToDist() {
   const publicDir = resolve(__dirname, 'public')
@@ -27,9 +27,36 @@ function copyNonHtmlToDist() {
   })
   
   // 重命名 Vite 生成的 HTML 文件以匹配 manifest.json 的路径
-  renameSync(resolve(distDir, 'popup-auth.html'), resolve(distDir, 'popup', 'auth.html'))
-  renameSync(resolve(distDir, 'popup-page.html'), resolve(distDir, 'popup', 'popup.html'))
-  renameSync(resolve(distDir, 'login-page.html'), resolve(distDir, 'login.html'))
+  const popupAuthSrc = resolve(distDir, 'popup-auth.html')
+  const popupPageSrc = resolve(distDir, 'popup-page.html')
+  const loginSrc = resolve(distDir, 'login-page.html')
+  
+  const popupAuthPath = resolve(distDir, 'popup', 'auth.html')
+  const popupPagePath = resolve(distDir, 'popup', 'popup.html')
+  const loginPath = resolve(distDir, 'login.html')
+  
+  // 确保目标目录存在
+  mkdirSync(resolve(distDir, 'popup'), { recursive: true })
+  
+  if (existsSync(popupAuthSrc)) {
+    renameSync(popupAuthSrc, popupAuthPath)
+  }
+  if (existsSync(popupPageSrc)) {
+    renameSync(popupPageSrc, popupPagePath)
+  }
+  if (existsSync(loginSrc)) {
+    renameSync(loginSrc, loginPath)
+  }
+  
+  // 修复 popup/auth.html 和 popup/popup.html 中的资源路径
+  // 从 ./assets/ 改为 ../assets/
+  [popupAuthPath, popupPagePath].forEach(filePath => {
+    if (existsSync(filePath)) {
+      let content = readFileSync(filePath, 'utf-8')
+      content = content.replace(/\.\/assets\//g, '../assets/')
+      writeFileSync(filePath, content, 'utf-8')
+    }
+  })
 }
 
 export default defineConfig({
