@@ -51,14 +51,17 @@ function toggleAuthMode() {
   if (isLoginMode) {
     subtitle.textContent = '欢迎登录您的账户';
     submitBtn.textContent = '登录';
-    switchText.innerHTML = '还没有账户？<button type="button" class="link-btn" onclick="toggleAuthMode()">立即注册</button>';
+    switchText.innerHTML = '还没有账户？<button type="button" class="link-btn" id="btn-toggle-mode">立即注册</button>';
     confirmPasswordGroup.style.display = 'none';
   } else {
     subtitle.textContent = '创建新账户开始使用';
     submitBtn.textContent = '注册';
-    switchText.innerHTML = '已有账户？<button type="button" class="link-btn" onclick="toggleAuthMode()">立即登录</button>';
+    switchText.innerHTML = '已有账户？<button type="button" class="link-btn" id="btn-toggle-mode">立即登录</button>';
     confirmPasswordGroup.style.display = 'block';
   }
+  
+  // 重新绑定点击事件
+  document.getElementById('btn-toggle-mode').addEventListener('click', toggleAuthMode);
   
   // 清空验证码
   document.getElementById('captcha').value = '';
