@@ -91,7 +91,7 @@ const handleSettings = () => {
 
 .welcome-card {
   text-align: center;
-  padding: 40px;
+  padding: 24px;
   background: #2d2d2d;
   border: 1px solid #3d3d3d;
   border-radius: 12px;
@@ -99,20 +99,20 @@ const handleSettings = () => {
 }
 
 .welcome-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
+  font-size: 48px;
+  margin-bottom: 12px;
 }
 
 .welcome-card h2 {
-  margin: 0 0 10px 0;
-  font-size: 32px;
+  margin: 0 0 8px 0;
+  font-size: 28px;
   font-weight: 600;
   color: #ffffff;
 }
 
 .welcome-card p {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   color: #999;
 }
 
