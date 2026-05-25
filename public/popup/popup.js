@@ -13,14 +13,13 @@ async function getUserInfo(userData) {
   try {
     const apiUrl = 'http://127.0.0.1' + '/v1/user/info/';
     
-    // 根据文档，用户信息接口是POST请求，使用multipart/form-data
-    const formData = new FormData();
-    formData.append('uid', userData.uid);
-    formData.append('token', userData.token);
-    
+    // 根据文档，优先使用Header认证
     const response = await fetch(apiUrl, {
       method: 'POST',
-      body: formData,
+      headers: {
+        'uid': userData.uid,
+        'token': userData.token
+      },
       mode: 'cors',
       cache: 'no-cache'
     });
