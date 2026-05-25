@@ -3,9 +3,9 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import { writeFileSync, mkdirSync, existsSync, cpSync } from 'fs'
+import { writeFileSync, mkdirSync, existsSync, cpSync, renameSync } from 'fs'
 
-function copyPublicToDist() {
+function copyNonHtmlToDist() {
   const publicDir = resolve(__dirname, 'public')
   const distDir = resolve(__dirname, 'dist')
 
@@ -13,7 +13,23 @@ function copyPublicToDist() {
     mkdirSync(distDir, { recursive: true })
   }
 
-  cpSync(publicDir, distDir, { recursive: true })
+  // 只复制非 HTML 文件和目录
+  const items = require('fs').readdirSync(publicDir)
+  items.forEach(item => {
+    // 跳过 HTML 文件
+    if (item.endsWith('.html')) {
+      return
+    }
+    
+    const srcPath = resolve(publicDir, item)
+    const destPath = resolve(distDir, item)
+    cpSync(srcPath, destPath, { recursive: true })
+  })
+  
+  // 重命名 Vite 生成的 HTML 文件以匹配 manifest.json 的路径
+  renameSync(resolve(distDir, 'popup-auth.html'), resolve(distDir, 'popup', 'auth.html'))
+  renameSync(resolve(distDir, 'popup-page.html'), resolve(distDir, 'popup', 'popup.html'))
+  renameSync(resolve(distDir, 'login-page.html'), resolve(distDir, 'login.html'))
 }
 
 export default defineConfig({
@@ -23,7 +39,7 @@ export default defineConfig({
     {
       name: 'extension-build',
       closeBundle() {
-        copyPublicToDist()
+        copyNonHtmlToDist()
       }
     }
   ],
@@ -38,9 +54,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        popup: resolve(__dirname, 'public/popup/popup.html'),
-        login: resolve(__dirname, 'public/login.html'),
-        auth: resolve(__dirname, 'public/popup/auth.html'),
+        'popup/popup': resolve(__dirname, 'popup-page.html'),
+        login: resolve(__dirname, 'login-page.html'),
+        'popup/auth': resolve(__dirname, 'popup-auth.html'),
       },
     },
   },
