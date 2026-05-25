@@ -1,30 +1,7 @@
 let isLoginMode = true;
 let captchaIdent = null;
 
-// 初始化调试面板
-function initDebugPanel() {
-  const apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE;
-  document.getElementById('debug-api-url').textContent = apiUrl;
-  document.getElementById('debug-status').textContent = '初始化中...';
-  document.getElementById('debug-error').textContent = '-';
-  document.getElementById('debug-mode').textContent = isLoginMode ? '登录' : '注册';
-}
-
-// 更新调试面板状态
-function updateDebugPanel(status, error = '-', mode = '正常') {
-  const statusEl = document.getElementById('debug-status');
-  const errorEl = document.getElementById('debug-error');
-  const modeEl = document.getElementById('debug-mode');
-  
-  statusEl.textContent = status;
-  statusEl.className = 'status-value' + (status.includes('失败') || status.includes('错误') ? ' error' : '');
-  
-  errorEl.textContent = error || '-';
-  modeEl.textContent = mode;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  initDebugPanel();
   checkAuthStatus();
   setupFormListeners();
   refreshCaptcha();
@@ -112,129 +89,56 @@ async function refreshCaptcha() {
   const retryDelay = 500;
   const apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE;
   
-  // 显示加载状态
   showCaptchaLoading();
-  
-  console.log('验证码服务地址:', apiUrl);
-  updateDebugPanel('连接中...', '-', '获取验证码');
   
   for (let retry = 0; retry <= maxRetries; retry++) {
     try {
-      console.log(`尝试连接验证码服务 (重试${retry}): ${apiUrl}`);
-      
-      // 打印请求信息
-      console.log('=== 请求信息 ===');
-      console.log('请求URL:', apiUrl);
-      console.log('请求方法:', 'POST');
-      console.log('请求模式:', 'cors');
-      console.log('时间:', new Date().toISOString());
-      
       const response = await fetchWithTimeout(apiUrl, {
         method: 'POST',
         mode: 'cors',
         cache: 'no-cache'
       });
       
-      // 打印完整响应信息
-      console.log('=== 响应信息 ===');
-      console.log('状态码:', response.status);
-      console.log('状态文本:', response.statusText);
-      console.log('响应头:', Object.fromEntries(response.headers.entries()));
-      
       if (!response.ok) {
-        // 尝试读取响应体了解具体错误
-        let errorBody = '无法读取响应体';
-        try {
-          errorBody = await response.text();
-          console.log('错误响应体:', errorBody);
-        } catch (e) {
-          console.log('读取错误响应体失败:', e.message);
-        }
-        const errMsg = `HTTP错误: ${response.status} - ${errorBody}`;
-        console.log(errMsg);
-        
-        if (retry >= maxRetries) {
-          updateDebugPanel('连接失败', errMsg, '测试模式');
-        }
         if (retry < maxRetries) {
-          console.log(`等待 ${retryDelay}ms 后重试...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
         continue;
       }
       
-      // 先尝试读取文本，确认响应格式
       let responseText;
       try {
         responseText = await response.text();
-        console.log('响应文本:', responseText);
       } catch (e) {
-        console.log('读取响应文本失败:', e.message);
-        if (retry >= maxRetries) {
-          updateDebugPanel('解析失败', '无法读取响应内容', '测试模式');
-        }
         if (retry < maxRetries) {
-          console.log(`等待 ${retryDelay}ms 后重试...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
         continue;
       }
       
-      // 尝试解析JSON
       let data;
       try {
         data = JSON.parse(responseText);
-        console.log('解析后的JSON:', data);
       } catch (e) {
-        console.log('JSON解析失败:', e.message);
-        console.log('响应不是有效JSON，内容:', responseText);
-        if (retry >= maxRetries) {
-          updateDebugPanel('解析失败', '响应不是有效JSON', '测试模式');
-        }
         if (retry < maxRetries) {
-          console.log(`等待 ${retryDelay}ms 后重试...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
         continue;
       }
       
       if (data.code === 0) {
-        // 打印完整的返回数据结构，帮助调试
-        console.log('=== 数据结构检查 ===');
-        console.log('data.data:', data.data);
-        console.log('data.data 类型:', typeof data.data);
-        console.log('data.data 的所有键:', data.data ? Object.keys(data.data) : 'undefined');
-        
-        // 检查数据是否存在
         if (!data.data) {
-          const errMsg = 'data.data 不存在';
-          console.log(errMsg);
-          if (retry >= maxRetries) {
-            updateDebugPanel('获取失败', errMsg, '测试模式');
-          }
           if (retry < maxRetries) {
-            console.log(`等待 ${retryDelay}ms 后重试...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay));
           }
           continue;
         }
         
-        // 检查验证码标识和图片是否存在
         const ident = data.data.ident || data.data.id || data.data.uuid || null;
         const captchaImage = data.data.image || data.data.img || null;
         
-        console.log('识别到的 ident:', ident);
-        console.log('识别到的 image:', captchaImage ? '存在(base64)' : '不存在');
-        
         if (!ident || !captchaImage) {
-          const errMsg = `数据格式错误 - 需要 ident 和 image，但得到: ${JSON.stringify(data.data)}`;
-          console.log(errMsg);
-          
-          if (retry >= maxRetries) {
-            updateDebugPanel('获取失败', errMsg, '测试模式');
-          }
           if (retry < maxRetries) {
-            console.log(`等待 ${retryDelay}ms 后重试...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay));
           }
           continue;
@@ -242,15 +146,10 @@ async function refreshCaptcha() {
         
         captchaIdent = ident;
         
-        console.log('获取验证码成功:', { ident: captchaIdent, imageLength: captchaImage.length });
-        updateDebugPanel('连接成功', '-', '正常模式');
-        
-        // 使用后端返回的图片
         const captchaImg = document.getElementById('captcha-img');
         captchaImg.alt = '验证码图片';
         captchaImg.src = `data:image/png;base64,${captchaImage}`;
         
-        // 隐藏加载状态，显示图片
         hideCaptchaLoading();
         
         const errorMsg = document.getElementById('error-message');
@@ -259,32 +158,21 @@ async function refreshCaptcha() {
         return;
       } else {
         const errorMsg = data.echo || '验证码服务返回错误';
-        console.log(`验证码接口返回错误: ${errorMsg}`);
-        
         if (retry >= maxRetries) {
-          updateDebugPanel('验证失败', errorMsg, '测试模式');
           showMessage(`验证码获取失败: ${errorMsg}，使用本地测试模式`, 'error');
         } else {
-          console.log(`等待 ${retryDelay}ms 后重试...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
       }
     } catch (error) {
-      const errMsg = error.message;
-      console.log(`连接失败 (${apiUrl}): ${errMsg}`);
-      
       if (retry >= maxRetries) {
-        updateDebugPanel('连接失败', errMsg, '测试模式');
-        showMessage(`连接失败: ${errMsg}，使用本地测试模式`, 'error');
+        showMessage(`连接失败: ${error.message}，使用本地测试模式`, 'error');
       } else {
-        console.log(`等待 ${retryDelay}ms 后重试...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }
   }
   
-  console.error('验证码服务无法连接');
-  updateDebugPanel('服务不可达', '所有尝试均失败', '测试模式');
   captchaIdent = 'test-ident';
   const captchaImg = document.getElementById('captcha-img');
   captchaImg.alt = '测试验证码: 1234';
@@ -294,6 +182,8 @@ async function refreshCaptcha() {
       <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">1234</text>
     </svg>
   `)}`;
+  
+  hideCaptchaLoading();
 }
 
 async function handleSubmit(e) {
