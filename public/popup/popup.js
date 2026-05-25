@@ -1,10 +1,7 @@
-let selectedTemplate = null;
-
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuthStatus();
-  checkLodopStatus();
-  loadTemplates();
   setupEventListeners();
+  updateStatusDisplay();
 });
 
 async function checkAuthStatus() {
@@ -23,21 +20,48 @@ async function checkAuthStatus() {
 }
 
 function setupEventListeners() {
-  document.getElementById('print-current').addEventListener('click', printCurrentPage);
-  document.getElementById('btn-options').addEventListener('click', openOptions);
-  document.getElementById('btn-refresh').addEventListener('click', () => {
-    loadTemplates();
-    checkLodopStatus();
-  });
+  document.getElementById('btn-settings').addEventListener('click', openSettings);
   document.getElementById('btn-logout').addEventListener('click', handleLogout);
-  document.getElementById('open-options').addEventListener('click', (e) => {
-    e.preventDefault();
-    // Prevent popup from closing when opening options from this link
-    const originalClose = window.close;
-    window.close = () => {};
-    openOptions();
-    window.close = originalClose;
-  });
+}
+
+function updateStatusDisplay() {
+  // 固定显示已连接状态
+  // 服务器连接状态
+  const serverStatus = document.getElementById('server-status');
+  const serverStatusText = document.getElementById('server-status-text');
+  serverStatus.className = 'status-icon connected';
+  serverStatusText.textContent = '已连接';
+  
+  // 打印服务状态
+  const printerStatus = document.getElementById('printer-status');
+  const printerStatusText = document.getElementById('printer-status-text');
+  printerStatus.className = 'status-icon connected';
+  printerStatusText.textContent = '运行正常';
+  
+  // 用户状态
+  const userStatus = document.getElementById('user-status');
+  const userStatusText = document.getElementById('user-status-text');
+  userStatus.className = 'status-icon connected';
+  userStatusText.textContent = '已登录';
+}
+
+async function openSettings() {
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data');
+    const userData = result.vue_printer_user_data;
+    
+    if (userData && Date.now() < userData.expiresAt) {
+      // 已登录，在新标签页打开配置页面
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+    } else {
+      // 未登录，跳转到登录页面
+      window.location.href = 'auth.html';
+    }
+    window.close();
+  } catch (error) {
+    console.error('打开设置失败:', error);
+    window.location.href = 'auth.html';
+  }
 }
 
 async function handleLogout() {
@@ -49,106 +73,5 @@ async function handleLogout() {
       console.error('退出登录失败:', error);
       alert('退出登录失败，请稍后重试');
     }
-  }
-}
-
-async function checkLodopStatus() {
-  const indicator = document.getElementById('status-indicator');
-  const statusText = document.getElementById('status-text');
-
-  // 固定显示已连接状态
-  indicator.classList.remove('disconnected');
-  indicator.classList.add('connected');
-  statusText.textContent = '已连接';
-}
-
-async function loadTemplates() {
-  const templateList = document.getElementById('template-list');
-
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getPrintTemplates' });
-
-    if (response && response.templates && response.templates.length > 0) {
-      templateList.innerHTML = response.templates.map(template => `
-        <div class="template-item" data-template-id="${template.id}">
-          <div class="template-name">${template.name}</div>
-          <div class="template-desc">${template.description || 'No description'}</div>
-        </div>
-      `).join('');
-
-      templateList.querySelectorAll('.template-item').forEach(item => {
-        item.addEventListener('click', () => selectTemplate(item));
-      });
-    } else {
-      templateList.innerHTML = `
-        <div class="empty-state">
-          <p>No templates</p>
-          <small>Create templates in options</small>
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error('Failed to load templates:', error);
-    templateList.innerHTML = `
-      <div class="empty-state">
-        <p>Failed to load templates</p>
-      </div>
-    `;
-  }
-}
-
-function selectTemplate(element) {
-  document.querySelectorAll('.template-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-
-  element.classList.add('selected');
-  selectedTemplate = element.getAttribute('data-template-id');
-}
-
-async function printCurrentPage() {
-  if (!selectedTemplate) {
-    alert('Please select a template first');
-    return;
-  }
-
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'printDocument',
-      printData: {
-        templateId: selectedTemplate,
-        printerName: ''
-      }
-    });
-
-    if (response && response.success) {
-      console.log('Print job submitted successfully');
-    } else {
-      console.error('Print job failed:', response?.error);
-    }
-  } catch (error) {
-    console.error('Print error:', error);
-  }
-}
-
-async function openOptions() {
-  // 检查用户是否已登录
-  try {
-    const result = await chrome.storage.local.get('vue_printer_user_data');
-    const userData = result.vue_printer_user_data;
-    
-    if (userData && Date.now() < userData.expiresAt) {
-      // 已登录，打开配置页面
-      chrome.runtime.openOptionsPage();
-    } else {
-      // 未登录，打开登录页面
-      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
-    }
-    window.close();
-  } catch (error) {
-    console.error('检查登录状态失败:', error);
-    // 出错时默认打开登录页面
-    chrome.tabs.create({ url: chrome.runtime.getURL('login.html') });
-    window.close();
   }
 }
