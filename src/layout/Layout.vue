@@ -20,7 +20,7 @@
         </router-link>
       </nav>
       <div class="sidebar-footer">
-        <p>© 2024 Vue Printer</p>
+        <p>© 2026 Vue Printer</p>
       </div>
     </aside>
 
