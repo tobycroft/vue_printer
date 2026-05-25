@@ -1,7 +1,6 @@
 <template>
   <div class="home-container">
     <div class="welcome-card">
-      <div class="welcome-icon">️</div>
       <h2>欢迎使用 Vue Printer</h2>
       <p>您的一站式打印管理解决方案</p>
     </div>
@@ -96,11 +95,6 @@ const handleSettings = () => {
   border: 1px solid #3d3d3d;
   border-radius: 12px;
   margin-bottom: 30px;
-}
-
-.welcome-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
 }
 
 .welcome-card h2 {
