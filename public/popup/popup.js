@@ -35,6 +35,11 @@ async function getUserInfo(userData) {
     if (data.code === 0 && data.data) {
       console.log('解析到的用户数据:', data.data);
       return data.data;
+    } else if (data.code === -1) {
+      // code=-1表示未登录或token已过期，需要退出登录
+      console.log('用户信息接口返回未登录，自动退出登录');
+      await handleLogout(false); // 不需要显示确认框
+      return null;
     }
     
     console.log('用户信息接口返回错误:', data.code, data.echo);
@@ -151,13 +156,17 @@ async function openSettings() {
   }
 }
 
-async function handleLogout() {
-  if (confirm('确定要退出登录吗？')) {
-    try {
-      await chrome.storage.local.remove('vue_printer_user_data');
-      window.location.href = 'auth.html';
-    } catch (error) {
-      console.error('退出登录失败:', error);
+async function handleLogout(showConfirm = true) {
+  if (showConfirm && !confirm('确定要退出登录吗？')) {
+    return;
+  }
+  
+  try {
+    await chrome.storage.local.remove('vue_printer_user_data');
+    window.location.href = 'auth.html';
+  } catch (error) {
+    console.error('退出登录失败:', error);
+    if (showConfirm) {
       alert('退出登录失败，请稍后重试');
     }
   }
