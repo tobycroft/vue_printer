@@ -5,6 +5,7 @@ import Settings from '../views/admin/Settings.vue'
 import Templates from '../views/admin/Templates.vue'
 import Connection from '../views/admin/Connection.vue'
 import About from '../views/admin/About.vue'
+import Help from '../views/admin/Help.vue'
 
 const routes = [
   {
@@ -44,6 +45,12 @@ const routes = [
         name: 'About',
         component: About,
         meta: { title: '关于' }
+      },
+      {
+        path: 'help',
+        name: 'Help',
+        component: Help,
+        meta: { title: '帮助' }
       }
     ]
   },
