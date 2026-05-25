@@ -1,5 +1,5 @@
-const LODOP_SCRIPT_URL = 'https://localhost:8443/CLodopfuncs.js';
-const LODOP_PORT = 18000;
+const LODOP_SCRIPT_URL = 'http://127.0.0.1:8000/CLodopfuncs.js';
+const LODOP_PORT = 8000;
 
 let lodopPluginInstalled = false;
 

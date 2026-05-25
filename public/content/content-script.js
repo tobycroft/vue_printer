@@ -9,7 +9,7 @@ function loadLodopScript() {
 
     const script = document.createElement('script');
     script.id = 'clodop-script';
-    script.src = 'https://localhost:8443/CLodopfuncs.js';
+    script.src = 'http://127.0.0.1:8000/CLodopfuncs.js';
     script.type = 'text/javascript';
     script.onload = () => {
       if (window.getLodop) {

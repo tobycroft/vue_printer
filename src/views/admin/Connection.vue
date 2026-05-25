@@ -42,9 +42,9 @@
       <h3>ℹ️ 使用说明</h3>
       <ul class="info-list">
         <li>确保已安装 C-LODOP 打印控件</li>
-        <li>服务地址通常为: https://localhost:8443/CLodopfuncs.js</li>
+        <li>服务地址通常为: http://127.0.0.1:8000/CLodopfuncs.js</li>
         <li>如果连接失败，请检查 C-LODOP 是否正常运行</li>
-        <li>部分浏览器可能需要添加安全例外</li>
+        <li>C-LODOP 默认监听 8000 端口</li>
       </ul>
     </div>
   </div>
@@ -54,7 +54,7 @@
 import { ref, onMounted } from 'vue'
 
 const config = ref({
-  url: 'https://localhost:8443/CLodopfuncs.js'
+  url: 'http://127.0.0.1:8000/CLodopfuncs.js'
 })
 
 const connectionStatus = ref({
