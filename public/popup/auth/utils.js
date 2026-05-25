@@ -55,13 +55,15 @@ async function checkAuthStatus() {
     
     if (!userData || !userData.token || !userData.uid || Date.now() > userData.expiresAt) {
       // 未登录或缺少必要信息，停留在登录界面
-      return;
+      return false;
     }
     
     // 已登录，跳转到主界面
     window.location.href = 'popup.html';
+    return true; // 返回true表示已登录
   } catch (error) {
     console.error('检查登录状态失败:', error);
     await clearAuthData();
+    return false;
   }
 }

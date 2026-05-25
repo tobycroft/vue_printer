@@ -58,7 +58,13 @@ function setupFormListeners() {
 // 初始化应用
 async function initAuthApp() {
   // 先检查登录状态，如果已登录直接跳转，不执行后续初始化
-  await checkAuthStatus();
+  const isLoggedIn = await checkAuthStatus();
+  
+  // 如果已登录，checkAuthStatus会跳转，这里不需要继续执行
+  // 但为了保险起见，我们仍然检查一下返回值
+  if (isLoggedIn) {
+    return; // 已登录，停止初始化
+  }
   
   // 如果没有跳转，继续初始化
   setupFormListeners();
