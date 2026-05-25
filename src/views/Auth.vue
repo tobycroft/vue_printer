@@ -1,0 +1,563 @@
+<template>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>🖨️ Vue Printer</h1>
+      <p>{{ authSubtitle }}</p>
+    </div>
+
+    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+
+    <form class="auth-form" @submit.prevent="handleSubmit">
+      <div class="form-group">
+        <label for="username">用户名</label>
+        <input
+          id="username"
+          v-model="formData.username"
+          type="text"
+          placeholder="请输入用户名"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input
+          id="password"
+          v-model="formData.password"
+          type="password"
+          placeholder="请输入密码"
+          required
+        />
+      </div>
+      
+      <div v-if="!isLoginMode" class="form-group">
+        <label for="confirm-password">确认密码</label>
+        <input
+          id="confirm-password"
+          v-model="formData.confirmPassword"
+          type="password"
+          placeholder="请再次输入密码"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="captcha">验证码</label>
+        <div class="captcha-group">
+          <input
+            id="captcha"
+            v-model="formData.captcha"
+            type="text"
+            placeholder="请输入验证码"
+            required
+          />
+          <button type="button" class="captcha-btn" @click="refreshCaptcha">
+            <div v-if="captchaLoading" class="captcha-loading">获取中...</div>
+            <img
+              v-show="!captchaLoading && captchaImage"
+              :src="captchaImage"
+              alt="验证码"
+              class="captcha-image"
+            />
+          </button>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" :disabled="submitting">
+          {{ submitting ? '处理中...' : (isLoginMode ? '登录' : '注册') }}
+        </button>
+      </div>
+    </form>
+    
+    <div class="auth-switch">
+      <p>
+        {{ isLoginMode ? '还没有账户？' : '已有账户？' }}
+        <button type="button" class="link-btn" @click="toggleAuthMode">
+          {{ isLoginMode ? '立即注册' : '立即登录' }}
+        </button>
+      </p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+
+// API配置
+const CONFIG = {
+  API_BASE_URL: 'http://127.0.0.1',
+  TIMEOUT: 10000,
+  CAPTCHA: {
+    CREATE: '/v1/index/captcha/create'
+  },
+  AUTH: {
+    LOGIN: '/v1/user/login/',
+    REGISTER: '/v1/user/register/'
+  }
+}
+
+// 状态
+const isLoginMode = ref(true)
+const submitting = ref(false)
+const captchaLoading = ref(false)
+const captchaIdent = ref(null)
+const captchaImage = ref('')
+const errorMessage = ref('')
+const successMessage = ref('')
+
+const formData = ref({
+  username: '',
+  password: '',
+  confirmPassword: '',
+  captcha: ''
+})
+
+const authSubtitle = ref('欢迎登录您的账户')
+
+onMounted(() => {
+  checkAuthStatus()
+  refreshCaptcha()
+})
+
+// 检查认证状态
+async function checkAuthStatus() {
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data')
+    const userData = result.vue_printer_user_data
+    
+    if (!userData || !userData.token || !userData.uid || Date.now() > userData.expiresAt) {
+      return false
+    }
+    
+    // 已登录，跳转到主界面
+    window.location.href = 'popup.html'
+    return true
+  } catch (error) {
+    console.error('检查登录状态失败:', error)
+    await clearAuthData()
+    return false
+  }
+}
+
+// 清除认证数据
+async function clearAuthData() {
+  try {
+    await chrome.storage.local.remove('vue_printer_user_data')
+  } catch (error) {
+    console.error('清除登录数据失败:', error)
+  }
+}
+
+// 显示消息
+function showMessage(message, type) {
+  if (type === 'error') {
+    errorMessage.value = message
+    successMessage.value = ''
+  } else {
+    successMessage.value = message
+    errorMessage.value = ''
+  }
+  
+  setTimeout(() => {
+    errorMessage.value = ''
+    successMessage.value = ''
+  }, 3000)
+}
+
+// 带超时的fetch
+async function fetchWithTimeout(url, options, timeout = CONFIG.TIMEOUT) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    return response
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+// 刷新验证码
+async function refreshCaptcha() {
+  const maxRetries = 2
+  const retryDelay = 500
+  const apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE
+  
+  captchaLoading.value = true
+  
+  for (let retry = 0; retry <= maxRetries; retry++) {
+    try {
+      const response = await fetchWithTimeout(apiUrl, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache'
+      })
+      
+      if (!response.ok) {
+        if (retry < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+        }
+        continue
+      }
+      
+      let responseText
+      try {
+        responseText = await response.text()
+      } catch (e) {
+        if (retry < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+        }
+        continue
+      }
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (e) {
+        if (retry < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+        }
+        continue
+      }
+      
+      if (data.code === 0) {
+        if (!data.data) {
+          if (retry < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay))
+          }
+          continue
+        }
+        
+        const ident = data.data.ident || data.data.id || data.data.uuid || null
+        const image = data.data.image || data.data.img || null
+        
+        if (!ident || !image) {
+          if (retry < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay))
+          }
+          continue
+        }
+        
+        captchaIdent.value = ident
+        captchaImage.value = `data:image/png;base64,${image}`
+        
+        captchaLoading.value = false
+        errorMessage.value = ''
+        
+        return
+      } else {
+        const errorMsg = data.echo || '验证码服务返回错误'
+        if (retry >= maxRetries) {
+          showMessage(`验证码获取失败: ${errorMsg}，使用本地测试模式`, 'error')
+        } else {
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+        }
+      }
+    } catch (error) {
+      if (retry >= maxRetries) {
+        showMessage(`连接失败: ${error.message}，使用本地测试模式`, 'error')
+      } else {
+        await new Promise(resolve => setTimeout(resolve, retryDelay))
+      }
+    }
+  }
+  
+  // 使用测试模式
+  captchaIdent.value = 'test-ident'
+  captchaImage.value = `data:image/svg+xml;base64,${btoa(`
+    <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#f0f0f0"/>
+      <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">1234</text>
+    </svg>
+  `)}`
+  
+  captchaLoading.value = false
+}
+
+// 切换登录/注册模式
+function toggleAuthMode() {
+  isLoginMode.value = !isLoginMode.value
+  
+  if (isLoginMode.value) {
+    authSubtitle.value = '欢迎登录您的账户'
+  } else {
+    authSubtitle.value = '创建新账户开始使用'
+  }
+  
+  // 清空验证码
+  formData.value.captcha = ''
+  refreshCaptcha()
+}
+
+// 提交表单
+async function handleSubmit() {
+  // 验证表单
+  if (!formData.value.username || !formData.value.password || !formData.value.captcha) {
+    showMessage('请填写所有必填字段', 'error')
+    return
+  }
+  
+  if (!isLoginMode.value && formData.value.password !== formData.value.confirmPassword) {
+    showMessage('两次输入的密码不一致', 'error')
+    return
+  }
+  
+  if (!captchaIdent.value) {
+    showMessage('请先获取验证码', 'error')
+    return
+  }
+  
+  submitting.value = true
+  
+  try {
+    // 检查ident是否有效
+    if (captchaIdent.value !== 'test-ident' && (!captchaIdent.value || captchaIdent.value.trim() === '')) {
+      showMessage('验证码标识无效，请刷新验证码', 'error')
+      refreshCaptcha()
+      return
+    }
+    
+    const apiUrl = CONFIG.API_BASE_URL + (isLoginMode.value ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER)
+    console.log(`正在调用${isLoginMode.value ? '登录' : '注册'}接口:`, apiUrl)
+    
+    const formDataObj = new FormData()
+    formDataObj.append('username', formData.value.username)
+    formDataObj.append('password', formData.value.password)
+    formDataObj.append('ident', captchaIdent.value)
+    formDataObj.append('code', formData.value.captcha)
+    
+    const authResponse = await fetch(apiUrl, {
+      method: 'POST',
+      body: formDataObj
+    })
+    
+    const authData = await authResponse.json()
+    
+    if (authData.code === 0) {
+      // 保存用户数据
+      const userData = {
+        uid: authData.data.uid,
+        username: formData.value.username,
+        token: authData.data.token || '',
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7天有效期
+      }
+      
+      if (!userData.uid || !userData.token) {
+        showMessage('登录失败：缺少必要的认证信息', 'error')
+        refreshCaptcha()
+        return
+      }
+      
+      await chrome.storage.local.set({
+        vue_printer_user_data: userData
+      })
+      
+      showMessage(isLoginMode.value ? '登录成功！' : '注册成功！', 'success')
+      
+      // 延迟跳转到主界面
+      setTimeout(() => {
+        window.location.href = 'popup.html'
+      }, 1000)
+    } else {
+      showMessage(authData.echo || (isLoginMode.value ? '登录失败' : '注册失败'), 'error')
+      refreshCaptcha()
+    }
+  } catch (error) {
+    console.error('请求失败:', error)
+    showMessage('网络错误，请稍后重试', 'error')
+    refreshCaptcha()
+  } finally {
+    submitting.value = false
+  }
+}
+</script>
+
+<style scoped>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.auth-container {
+  width: 350px;
+  min-height: 400px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: #f5f5f5;
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px 0;
+}
+
+.auth-header h1 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.auth-header p {
+  font-size: 13px;
+  color: #666;
+}
+
+.auth-form {
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.captcha-group {
+  display: flex;
+  gap: 10px;
+}
+
+.captcha-group input {
+  flex: 1;
+}
+
+.captcha-btn {
+  width: 120px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #f5f5f5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.captcha-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #666;
+  z-index: 10;
+}
+
+.captcha-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.form-actions {
+  margin-top: 30px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.auth-switch p {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #4CAF50;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: #45a049;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.success-message {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+</style>
