@@ -38,6 +38,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        popup: resolve(__dirname, 'public/popup/popup.html'),
+        login: resolve(__dirname, 'public/login.html'),
+        auth: resolve(__dirname, 'public/popup/auth.html'),
       },
     },
   },
