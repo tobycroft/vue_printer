@@ -5,9 +5,20 @@ let lodopPluginInstalled = false;
 
 async function checkLodopInstallation() {
   return new Promise((resolve) => {
-    // Service Worker中不能使用document，直接返回false
-    // 实际检查应该在content script或popup中进行
-    resolve(false);
+    // 使用 fetch 检测 C-LODOP 服务是否可用
+    fetch('http://127.0.0.1:8000/CLodopfuncs.js', {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    })
+    .then(() => {
+      // 如果能访问到，说明 C-LODOP 服务正在运行
+      resolve(true);
+    })
+    .catch(() => {
+      // 无法访问，说明 C-LODOP 服务未启动
+      resolve(false);
+    });
   });
 }
 
