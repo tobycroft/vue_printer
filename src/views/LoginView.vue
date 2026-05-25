@@ -123,8 +123,8 @@ const handleSubmit = async () => {
         username: formData.username
       });
       
-      // 登录成功后跳转到主页面
-      window.location.href = '/options/options.html';
+      // 登录成功后跳转到管理后台
+      window.location.href = '/index.html#/admin/home'
     } else {
       alert(response.message || '操作失败');
       refreshCaptcha();
