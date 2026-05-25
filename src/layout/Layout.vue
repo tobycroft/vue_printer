@@ -52,19 +52,26 @@ const menus = ref([
 .admin-layout {
   display: flex;
   height: 100vh;
+  width: 100vw;
   overflow: hidden;
   background-color: #1a1a1a;
+  margin: 0;
+  padding: 0;
 }
 
 /* 左侧菜单样式 */
 .sidebar {
   width: 260px;
+  min-width: 260px;
   background: #2d2d2d;
   color: #e0e0e0;
   border-right: 1px solid #3d3d3d;
   display: flex;
   flex-direction: column;
   padding: 30px 20px;
+  margin: 0;
+  position: relative;
+  left: 0;
 }
 
 .sidebar-header {
@@ -149,6 +156,8 @@ const menus = ref([
   overflow: hidden;
   min-width: 0;
   background: #1a1a1a;
+  margin: 0;
+  padding: 0;
 }
 
 .content-header {
