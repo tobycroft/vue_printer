@@ -1,8 +1,44 @@
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuthStatus();
   setupEventListeners();
-  updateStatusDisplay();
+  await updateStatusDisplay();
 });
+
+// 获取用户信息
+async function getUserInfo(userData) {
+  if (!userData || !userData.token || !userData.uid) {
+    return null;
+  }
+  
+  try {
+    const apiUrl = 'http://127.0.0.1' + '/v1/user/info';
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userData.token}`,
+        'UID': userData.uid
+      },
+      mode: 'cors',
+      cache: 'no-cache'
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.code === 0 && data.data) {
+      return data.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    return null;
+  }
+}
 
 async function checkAuthStatus() {
   try {
@@ -24,7 +60,7 @@ function setupEventListeners() {
   document.getElementById('btn-logout').addEventListener('click', handleLogout);
 }
 
-function updateStatusDisplay() {
+async function updateStatusDisplay() {
   // 固定显示已连接状态
   // 服务器连接状态
   const serverStatus = document.getElementById('server-status');
@@ -41,8 +77,41 @@ function updateStatusDisplay() {
   // 用户状态
   const userStatus = document.getElementById('user-status');
   const userStatusText = document.getElementById('user-status-text');
-  userStatus.className = 'status-icon connected';
-  userStatusText.textContent = '已登录';
+  
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data');
+    const userData = result.vue_printer_user_data;
+    
+    if (userData && Date.now() < userData.expiresAt) {
+      // 尝试获取用户信息
+      const userInfo = await getUserInfo(userData);
+      
+      if (userInfo && userInfo.username) {
+        // 如果获取到用户信息，显示用户名
+        userStatusText.textContent = `已登录: ${userInfo.username}`;
+        // 更新本地存储的用户名
+        if (userData.username !== userInfo.username) {
+          userData.username = userInfo.username;
+          await chrome.storage.local.set({ vue_printer_user_data: userData });
+        }
+      } else if (userData.username) {
+        // 如果本地有用户名缓存，显示缓存的用户名
+        userStatusText.textContent = `已登录: ${userData.username}`;
+      } else {
+        // 否则只显示已登录
+        userStatusText.textContent = '已登录';
+      }
+      
+      userStatus.className = 'status-icon connected';
+    } else {
+      userStatusText.textContent = '未登录';
+      userStatus.className = 'status-icon disconnected';
+    }
+  } catch (error) {
+    console.error('更新用户状态失败:', error);
+    userStatusText.textContent = '已登录';
+    userStatus.className = 'status-icon connected';
+  }
 }
 
 async function openSettings() {
