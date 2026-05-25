@@ -42,6 +42,57 @@
       color: #666;
     }
 
+    /* 调试信息面板 */
+    .debug-panel {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .debug-panel h4 {
+      font-size: 13px;
+      color: #495057;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .debug-panel .status-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dashed #dee2e6;
+    }
+
+    .debug-panel .status-item:last-child {
+      border-bottom: none;
+    }
+
+    .debug-panel .status-label {
+      color: #6c757d;
+    }
+
+    .debug-panel .status-value {
+      color: #28a745;
+      font-family: monospace;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .debug-panel .status-value.error {
+      color: #dc3545;
+    }
+
+    .debug-panel .status-value.warning {
+      color: #ffc107;
+    }
+
     .auth-form {
       flex: 1;
     }
@@ -85,6 +136,7 @@
 
     .captcha-btn {
       width: 120px;
+      height: 42px;
       padding: 0;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
@@ -93,13 +145,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
     }
 
-    .captcha-btn img {
+    .captcha-loading {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 42px;
+      height: 100%;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #666;
+      z-index: 10;
+    }
+
+    .captcha-loading.hidden {
+      display: none;
+    }
+
+    .captcha-image {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       border-radius: 6px;
+      display: none;
+    }
+
+    .captcha-image.visible {
+      display: block;
     }
 
     .form-actions {
@@ -186,6 +264,27 @@
     <div class="error-message" id="error-message"></div>
     <div class="success-message" id="success-message"></div>
 
+    <!-- 调试信息面板 -->
+    <div class="debug-panel" id="debug-panel">
+      <h4>🔧 连接状态</h4>
+      <div class="status-item">
+        <span class="status-label">API地址:</span>
+        <span class="status-value" id="debug-api-url">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">连接状态:</span>
+        <span class="status-value" id="debug-status">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">错误信息:</span>
+        <span class="status-value error" id="debug-error">-</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">当前模式:</span>
+        <span class="status-value" id="debug-mode">-</span>
+      </div>
+    </div>
+
     <form class="auth-form" id="auth-form">
       <div class="form-group">
         <label for="username">用户名</label>
@@ -227,7 +326,8 @@
             required
           />
           <button type="button" class="captcha-btn" id="btn-refresh-captcha">
-            <img id="captcha-img" src="" alt="验证码" />
+            <div id="captcha-loading" class="captcha-loading">获取中...</div>
+            <img id="captcha-img" src="" alt="验证码" class="captcha-image" />
           </button>
         </div>
       </div>

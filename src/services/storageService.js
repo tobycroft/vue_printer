@@ -238,3 +238,5 @@ class StorageService {
 
 // 创建单例
 export const storageService = new StorageService();
+
+export default storageService;

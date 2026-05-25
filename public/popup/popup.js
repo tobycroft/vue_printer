@@ -51,8 +51,8 @@ async function openSettings() {
     const userData = result.vue_printer_user_data;
     
     if (userData && Date.now() < userData.expiresAt) {
-      // 已登录，在新标签页打开配置页面
-      chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+      // 已登录，在新标签页打开管理后台页面
+      chrome.tabs.create({ url: chrome.runtime.getURL('admin.html') });
     } else {
       // 未登录，跳转到登录页面
       window.location.href = 'auth.html';
