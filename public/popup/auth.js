@@ -52,81 +52,121 @@ function toggleAuthMode() {
   refreshCaptcha();
 }
 
-async function refreshCaptcha() {
+// 带超时的fetch请求
+async function fetchWithTimeout(url, options, timeout = CONFIG.TIMEOUT) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
   try {
-    // 先尝试使用默认端口，如果失败则尝试其他常见端口
-    let apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE;
-    let response = await fetch(apiUrl, {
-      method: 'POST',
-      mode: 'cors',
-      cache: 'no-cache'
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
     });
-    
-    // 如果请求失败，尝试常见的后端端口
-    if (!response.ok) {
-      const commonPorts = [8080, 8000, 3000, 9000];
-      
-      for (const port of commonPorts) {
-        const urlWithPort = CONFIG.API_BASE_URL.replace(/:\d+$/, '') + `:${port}` + CONFIG.CAPTCHA.CREATE;
-        try {
-          response = await fetch(urlWithPort, {
-            method: 'POST',
-            mode: 'cors',
-            cache: 'no-cache'
-          });
-          
-          if (response.ok) {
-            apiUrl = urlWithPort;
-            break;
-          }
-        } catch (e) {
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function refreshCaptcha() {
+  const maxRetries = 2; // 最大重试次数
+  const retryDelay = 500; // 重试间隔（毫秒）
+  const commonPorts = [8080, 8000, 3000, 9000, 80]; // 常见端口列表
+  
+  // 构建候选URL列表
+  const candidateUrls = [];
+  const baseUrl = CONFIG.API_BASE_URL.replace(/:\d+$/, '');
+  
+  // 如果配置中已经有端口，优先尝试
+  if (CONFIG.API_BASE_URL.includes(':')) {
+    candidateUrls.push(CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE);
+  }
+  
+  // 添加其他常见端口
+  for (const port of commonPorts) {
+    const urlWithPort = `${baseUrl}:${port}${CONFIG.CAPTCHA.CREATE}`;
+    if (!candidateUrls.includes(urlWithPort)) {
+      candidateUrls.push(urlWithPort);
+    }
+  }
+  
+  console.log('验证码服务候选地址:', candidateUrls);
+  
+  for (let retry = 0; retry <= maxRetries; retry++) {
+    for (const url of candidateUrls) {
+      try {
+        console.log(`尝试连接验证码服务 (重试${retry}): ${url}`);
+        
+        const response = await fetchWithTimeout(url, {
+          method: 'POST',
+          mode: 'cors',
+          cache: 'no-cache'
+        });
+        
+        if (!response.ok) {
+          console.log(`请求失败，状态码: ${response.status}`);
           continue;
         }
+        
+        const data = await response.json();
+        
+        if (data.code === 0) {
+          // 检查返回的数据结构
+          if (!data.data || !data.data.ident || !data.data.code) {
+            console.log('验证码数据格式错误');
+            continue;
+          }
+          
+          captchaIdent = data.data.ident;
+          console.log('获取验证码成功:', {
+            ident: captchaIdent,
+            code: data.data.code
+          });
+          
+          // 生成验证码图片
+          const captchaImg = document.getElementById('captcha-img');
+          captchaImg.alt = `验证码: ${data.data.code}`;
+          captchaImg.src = `data:image/svg+xml;base64,${btoa(`
+            <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="#f0f0f0"/>
+              <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">${data.data.code}</text>
+            </svg>
+          `)}`;
+          
+          // 如果之前显示了错误提示，清除它
+          const errorMsg = document.getElementById('error-message');
+          if (errorMsg) {
+            errorMsg.textContent = '';
+          }
+          
+          return;
+        } else {
+          console.log(`验证码接口返回错误: ${data.echo || '未知错误'}`);
+        }
+      } catch (error) {
+        console.log(`连接失败 (${url}): ${error.message}`);
       }
     }
     
-    const data = await response.json();
-    
-    if (data.code === 0) {
-      // 检查返回的数据结构
-      if (!data.data || !data.data.ident || !data.data.code) {
-        showMessage('验证码数据格式错误', 'error');
-        return;
-      }
-      
-      captchaIdent = data.data.ident;
-      console.log('获取验证码成功:', {
-        ident: captchaIdent,
-        code: data.data.code
-      });
-      
-      // 生成验证码图片（假设后端返回的code是验证码内容，这里用文本显示）
-      const captchaImg = document.getElementById('captcha-img');
-      captchaImg.alt = `验证码: ${data.data.code}`;
-      // 创建一个简单的验证码显示
-      captchaImg.src = `data:image/svg+xml;base64,${btoa(`
-        <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100%" height="100%" fill="#f0f0f0"/>
-          <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">${data.data.code}</text>
-        </svg>
-      `)}`;
-    } else {
-      showMessage('获取验证码失败: ' + (data.echo || '未知错误'), 'error');
+    // 如果不是最后一次重试，等待一下再重试
+    if (retry < maxRetries) {
+      console.log(`等待 ${retryDelay}ms 后重试...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
-  } catch (error) {
-    console.error('获取验证码失败:', error);
-    // 显示一个简单的验证码输入框，跳过实际的验证码验证
-    showMessage('无法连接到验证码服务，使用本地测试模式', 'error');
-    captchaIdent = 'test-ident'; // 设置测试用的ident
-    const captchaImg = document.getElementById('captcha-img');
-    captchaImg.alt = '测试验证码: 1234';
-    captchaImg.src = `data:image/svg+xml;base64,${btoa(`
-      <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100%" height="100%" fill="#f0f0f0"/>
-        <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">1234</text>
-      </svg>
-    `)}`;
   }
+  
+  // 所有尝试都失败了，使用测试模式
+  console.error('所有验证码服务地址都无法连接');
+  showMessage('无法连接到验证码服务，使用本地测试模式', 'error');
+  captchaIdent = 'test-ident';
+  const captchaImg = document.getElementById('captcha-img');
+  captchaImg.alt = '测试验证码: 1234';
+  captchaImg.src = `data:image/svg+xml;base64,${btoa(`
+    <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#f0f0f0"/>
+      <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">1234</text>
+    </svg>
+  `)}`;
 }
 
 async function handleSubmit(e) {
