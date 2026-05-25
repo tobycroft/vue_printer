@@ -33,7 +33,10 @@
   "icons": {
     "16": "icons/icon16.svg"
   },
-  "options_page": "options/options.html",
+  "options_ui": {
+    "page": "index.html#/admin/home",
+    "open_in_tab": true
+  },
   "web_accessible_resources": [
     {
       "resources": ["index.html", "templates/*", "assets/*"],

@@ -1,14 +1,14 @@
 <template>
   <div class="home-container">
     <div class="welcome-card">
-      <div class="welcome-icon">🖨️</div>
+      <div class="welcome-icon">️</div>
       <h2>欢迎使用 Vue Printer</h2>
       <p>您的一站式打印管理解决方案</p>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">📊</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <h3>打印任务</h3>
           <p class="stat-number">0</p>
@@ -26,7 +26,7 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">📋</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <h3>模板数量</h3>
           <p class="stat-number">0</p>
@@ -39,7 +39,7 @@
       <h3>快速操作</h3>
       <div class="quick-actions">
         <button class="action-btn" @click="handlePrint">
-          <span class="btn-icon">🖨️</span>
+          <span class="btn-icon"></span>
           <span>开始打印</span>
         </button>
         <button class="action-btn" @click="handleManageTemplates">
@@ -47,7 +47,7 @@
           <span>管理模板</span>
         </button>
         <button class="action-btn" @click="handleSettings">
-          <span class="btn-icon">⚙️</span>
+          <span class="btn-icon">️</span>
           <span>打印设置</span>
         </button>
       </div>
@@ -70,13 +70,11 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const handlePrint = () => {
-  // 实现打印逻辑
   alert('打印功能开发中...')
 }
 
 const handleManageTemplates = () => {
-  // 实现模板管理逻辑
-  alert('模板管理功能开发中...')
+  router.push('/admin/templates')
 }
 
 const handleSettings = () => {
@@ -95,11 +93,10 @@ const handleSettings = () => {
 .welcome-card {
   text-align: center;
   padding: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
   border-radius: 12px;
   margin-bottom: 30px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .welcome-icon {
@@ -111,12 +108,13 @@ const handleSettings = () => {
   margin: 0 0 10px 0;
   font-size: 32px;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .welcome-card p {
   margin: 0;
   font-size: 16px;
-  opacity: 0.9;
+  color: #999;
 }
 
 .stats-grid {
@@ -131,15 +129,16 @@ const handleSettings = () => {
   display: flex;
   align-items: center;
   padding: 24px;
-  background: white;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.2s;
 }
 
 .stat-card:hover {
+  border-color: #4CAF50;
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .stat-icon {
@@ -151,19 +150,19 @@ const handleSettings = () => {
   margin: 0 0 8px 0;
   font-size: 14px;
   font-weight: 500;
-  color: #606266;
+  color: #b0b0b0;
 }
 
 .stat-number {
   margin: 0 0 4px 0;
   font-size: 32px;
   font-weight: 600;
-  color: #303133;
+  color: #ffffff;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 .info-section {
@@ -174,7 +173,7 @@ const handleSettings = () => {
   margin: 0 0 20px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: #ffffff;
 }
 
 .quick-actions {
@@ -189,21 +188,20 @@ const handleSettings = () => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: white;
-  border: none;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #e0e0e0;
 }
 
 .action-btn:hover {
+  border-color: #4CAF50;
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  background: #f8f9fa;
 }
 
 .btn-icon {
@@ -212,14 +210,14 @@ const handleSettings = () => {
 }
 
 .activity-list {
-  background: white;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .activity-item {
   padding: 20px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #3d3d3d;
 }
 
 .activity-item:last-child {
@@ -229,7 +227,7 @@ const handleSettings = () => {
 .activity-item.empty {
   text-align: center;
   padding: 40px;
-  color: #909399;
+  color: #999;
 }
 
 .activity-item.empty p {

@@ -53,13 +53,14 @@ async function getUserInfo(userData) {
 // 检测服务器连通性
 async function checkServerConnectivity() {
   try {
-    const response = await fetch('http://127.0.0.1', {
+    const response = await fetch('http://127.0.0.1:80', {
       method: 'HEAD',
-      mode: 'cors',
+      mode: 'no-cors',
       cache: 'no-cache',
       timeout: 3000
     });
-    return response.ok;
+    // no-cors 模式下，即使成功也会返回 opaque 响应
+    return true;
   } catch (error) {
     console.error('服务器连通性检测失败:', error);
     return false;

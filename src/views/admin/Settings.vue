@@ -48,7 +48,7 @@
       <!-- 高级设置 -->
       <div class="setting-card">
         <div class="card-header">
-          <div class="card-icon">🔧</div>
+          <div class="card-icon"></div>
           <h3>高级设置</h3>
         </div>
         <div class="card-content">
@@ -203,22 +203,19 @@ const resetSettings = () => {
 
 .settings-header {
   margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .settings-header h2 {
   margin: 0 0 8px 0;
   font-size: 28px;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .settings-header p {
   margin: 0;
-  opacity: 0.9;
+  color: #999;
+  font-size: 14px;
 }
 
 .settings-grid {
@@ -230,24 +227,24 @@ const resetSettings = () => {
 }
 
 .setting-card {
-  background: white;
+  background: #2d2d2d;
+  border: 1px solid #3d3d3d;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.2s;
 }
 
 .setting-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #4CAF50;
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   padding: 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: #252525;
+  border-bottom: 1px solid #3d3d3d;
 }
 
 .card-icon {
@@ -259,7 +256,7 @@ const resetSettings = () => {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: #ffffff;
 }
 
 .card-content {
@@ -279,22 +276,24 @@ const resetSettings = () => {
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #b0b0b0;
 }
 
 .form-control {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #dcdfe6;
+  padding: 12px 14px;
+  background: #252525;
+  border: 1px solid #3d3d3d;
   border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.3s ease;
+  color: #e0e0e0;
+  transition: all 0.2s;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+  border-color: #4CAF50;
+  background: #2a2a2a;
 }
 
 .checkbox-label {
@@ -303,7 +302,7 @@ const resetSettings = () => {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #e0e0e0;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -316,7 +315,7 @@ const resetSettings = () => {
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #909399;
+  color: #999;
 }
 
 .info-item {
@@ -324,7 +323,7 @@ const resetSettings = () => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #3d3d3d;
 }
 
 .info-item:last-child {
@@ -332,12 +331,12 @@ const resetSettings = () => {
 }
 
 .info-item span:first-child {
-  color: #606266;
+  color: #b0b0b0;
   font-size: 14px;
 }
 
 .info-item span:last-child {
-  color: #303133;
+  color: #ffffff;
   font-weight: 500;
   font-size: 14px;
 }
@@ -357,25 +356,26 @@ const resetSettings = () => {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
 }
 
 .btn-primary {
-  background: #409eff;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #66b1ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .btn-secondary {
-  background: #f5f7fa;
-  color: #606266;
-  border: 1px solid #e4e7ed;
+  background: #3d3d3d;
+  color: #e0e0e0;
+  border: 1px solid #4d4d4d;
 }
 
 .btn-secondary:hover {
-  background: #e9ecef;
+  background: #4d4d4d;
 }
 </style>

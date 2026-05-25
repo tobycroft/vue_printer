@@ -1,35 +1,60 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Layout from '../layout/Layout.vue'
 import Home from '../views/admin/Home.vue'
 import Settings from '../views/admin/Settings.vue'
+import Templates from '../views/admin/Templates.vue'
+import Connection from '../views/admin/Connection.vue'
+import About from '../views/admin/About.vue'
 
 const routes = [
   {
     path: '/',
+    redirect: '/admin/home'
+  },
+  {
+    path: '/admin',
     component: Layout,
     children: [
       {
-        path: '',
+        path: 'home',
         name: 'Home',
         component: Home,
         meta: { title: '首页' }
       },
       {
+        path: 'templates',
+        name: 'Templates',
+        component: Templates,
+        meta: { title: '模板管理' }
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: Settings,
-        meta: { title: '设置' }
+        meta: { title: '打印设置' }
+      },
+      {
+        path: 'connection',
+        name: 'Connection',
+        component: Connection,
+        meta: { title: 'C-LODOP 连接' }
+      },
+      {
+        path: 'about',
+        name: 'About',
+        component: About,
+        meta: { title: '关于' }
       }
     ]
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
+    redirect: '/admin/home'
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes
 })
 

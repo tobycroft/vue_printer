@@ -3,7 +3,9 @@
     <!-- 左侧菜单 -->
     <aside class="sidebar">
       <div class="sidebar-header">
+        <div class="logo-icon">🖨️</div>
         <h2>Vue Printer</h2>
+        <div class="version">v1.0.0</div>
       </div>
       <nav class="menu">
         <router-link 
@@ -17,6 +19,9 @@
           <span class="menu-text">{{ menu.title }}</span>
         </router-link>
       </nav>
+      <div class="sidebar-footer">
+        <p>© 2024 Vue Printer</p>
+      </div>
     </aside>
 
     <!-- 右侧内容区域 -->
@@ -36,7 +41,10 @@ import { ref } from 'vue'
 
 const menus = ref([
   { path: '/admin/home', title: '首页', icon: '🏠' },
-  { path: '/admin/settings', title: '设置', icon: '⚙️' }
+  { path: '/admin/templates', title: '模板管理', icon: '📄' },
+  { path: '/admin/settings', title: '打印设置', icon: '⚙️' },
+  { path: '/admin/connection', title: 'C-LODOP 连接', icon: '' },
+  { path: '/admin/about', title: '关于', icon: '️' }
 ])
 </script>
 
@@ -45,65 +53,92 @@ const menus = ref([
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: #f5f7fa;
+  background-color: #1a1a1a;
 }
 
 /* 左侧菜单样式 */
 .sidebar {
-  width: 250px;
-  background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-  color: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  width: 260px;
+  background: #2d2d2d;
+  color: #e0e0e0;
+  border-right: 1px solid #3d3d3d;
   display: flex;
   flex-direction: column;
+  padding: 30px 20px;
 }
 
 .sidebar-header {
-  padding: 20px;
   text-align: center;
-  border-bottom: 1px solid #4a5f7a;
+  margin-bottom: 40px;
+}
+
+.logo-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
 }
 
 .sidebar-header h2 {
-  margin: 0;
-  font-size: 18px;
+  margin: 0 0 5px 0;
+  font-size: 22px;
   font-weight: 600;
+  color: #ffffff;
+}
+
+.version {
+  font-size: 12px;
+  color: #999;
 }
 
 .menu {
   flex: 1;
-  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   overflow-y: auto;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 12px 24px;
-  color: white;
+  padding: 14px 20px;
+  color: #b0b0b0;
   text-decoration: none;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  background: #252525;
+  border: 1px solid transparent;
 }
 
 .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-left-color: #3498db;
+  background: #353535;
+  color: #ffffff;
 }
 
 .menu-item.active {
-  background-color: rgba(52, 152, 219, 0.2);
-  border-left-color: #3498db;
-  font-weight: 500;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: #ffffff;
+  border-color: #4CAF50;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 .menu-icon {
   margin-right: 12px;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .menu-text {
-  font-size: 14px;
+  font-size: 15px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #3d3d3d;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
 }
 
 /* 右侧内容区域样式 */
@@ -113,25 +148,25 @@ const menus = ref([
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  background: #1a1a1a;
 }
 
 .content-header {
-  padding: 20px 30px;
-  background: white;
-  border-bottom: 1px solid #e4e7ed;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 30px 50px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #3d3d3d;
 }
 
 .content-header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
-  color: #303133;
+  color: #ffffff;
 }
 
 .content-body {
   flex: 1;
-  padding: 30px;
+  padding: 40px 50px;
   overflow-y: auto;
   width: 100%;
   min-height: 0;
@@ -139,20 +174,20 @@ const menus = ref([
 
 /* 滚动条样式 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #1a1a1a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
+  background: #3d3d3d;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #4d4d4d;
 }
 </style>

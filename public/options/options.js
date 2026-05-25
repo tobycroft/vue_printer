@@ -6,7 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   checkLodopConnection();
   setupEventListeners();
+  setupNavigation();
 });
+
+// 设置导航菜单
+function setupNavigation() {
+  const navItems = document.querySelectorAll('.nav-item');
+  
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      // 移除所有激活状态
+      navItems.forEach(nav => nav.classList.remove('active'));
+      document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+      
+      // 激活当前项
+      item.classList.add('active');
+      const sectionId = item.getAttribute('data-section');
+      document.getElementById(`section-${sectionId}`).classList.add('active');
+    });
+  });
+}
 
 function setupEventListeners() {
   document.getElementById('btn-create-template').addEventListener('click', openCreateModal);
@@ -36,8 +55,8 @@ async function loadTemplates() {
     if (templates.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <p>No templates yet</p>
-          <small>Create your first template to get started</small>
+          <p>暂无模板</p>
+          <p style="font-size: 13px; margin-top: 5px;">点击"创建新模板"开始使用</p>
         </div>
       `;
       return;
@@ -46,10 +65,10 @@ async function loadTemplates() {
     container.innerHTML = templates.map(template => `
       <div class="template-card" data-id="${template.id}">
         <h3>${template.name}</h3>
-        <p>${template.description || 'No description'}</p>
+        <p>${template.description || '暂无描述'}</p>
         <div class="template-actions">
-          <button class="btn-edit" data-action="edit" data-id="${template.id}">Edit</button>
-          <button class="btn-delete" data-action="delete" data-id="${template.id}">Delete</button>
+          <button class="btn-edit" data-action="edit" data-id="${template.id}">编辑</button>
+          <button class="btn-delete" data-action="delete" data-id="${template.id}">删除</button>
         </div>
       </div>
     `).join('');
@@ -65,7 +84,7 @@ async function loadTemplates() {
     console.error('Failed to load templates:', error);
     container.innerHTML = `
       <div class="empty-state">
-        <p>Failed to load templates</p>
+        <p>加载模板失败</p>
       </div>
     `;
   }
@@ -95,10 +114,10 @@ async function saveSettings() {
 
   try {
     await chrome.runtime.sendMessage({ action: 'saveSettings', settings });
-    showToast('Settings saved', 'success');
+    showToast('设置已保存', 'success');
   } catch (error) {
     console.error('Failed to save settings:', error);
-    showToast('Failed to save settings', 'error');
+    showToast('保存设置失败', 'error');
   }
 }
 
@@ -109,21 +128,24 @@ async function checkLodopConnection() {
     const response = await chrome.runtime.sendMessage({ action: 'checkLodopStatus' });
 
     if (response && response.installed) {
-      statusEl.innerHTML = '<span style="color: #4CAF50;">✓ Connected</span> - C-LODOP is ready';
-      statusEl.style.background = '#e8f5e9';
+      statusEl.innerHTML = '<span style="color: #4CAF50; font-weight: 600;">✓ 已连接</span> - C-LODOP 服务就绪';
+      statusEl.style.background = '#252525';
+      statusEl.style.borderColor = '#4CAF50';
     } else {
-      statusEl.innerHTML = '<span style="color: #f44336;">✗ Not Connected</span> - Please install C-LODOP';
-      statusEl.style.background = '#ffebee';
+      statusEl.innerHTML = '<span style="color: #f44336; font-weight: 600;">✗ 未连接</span> - 请安装 C-LODOP';
+      statusEl.style.background = '#252525';
+      statusEl.style.borderColor = '#f44336';
     }
   } catch (error) {
-    statusEl.innerHTML = '<span style="color: #ff9800;">⚠ Error</span> - Could not check status';
-    statusEl.style.background = '#fff3e0';
+    statusEl.innerHTML = '<span style="color: #ff9800; font-weight: 600;">⚠ 错误</span> - 无法检查状态';
+    statusEl.style.background = '#252525';
+    statusEl.style.borderColor = '#ff9800';
   }
 }
 
 function openCreateModal() {
   editingTemplateId = null;
-  document.getElementById('modal-title').textContent = 'Create Template';
+  document.getElementById('modal-title').textContent = '创建模板';
   document.getElementById('template-name').value = '';
   document.getElementById('template-description').value = '';
   document.getElementById('template-content').value = '';
@@ -135,7 +157,7 @@ function openEditModal(templateId) {
   if (!template) return;
 
   editingTemplateId = templateId;
-  document.getElementById('modal-title').textContent = 'Edit Template';
+  document.getElementById('modal-title').textContent = '编辑模板';
   document.getElementById('template-name').value = template.name;
   document.getElementById('template-description').value = template.description || '';
   document.getElementById('template-content').value = template.content || '';
@@ -153,12 +175,12 @@ async function saveTemplate() {
   const content = document.getElementById('template-content').value.trim();
 
   if (!name) {
-    showToast('Template name is required', 'error');
+    showToast('模板名称不能为空', 'error');
     return;
   }
 
   if (!content) {
-    showToast('Template content is required', 'error');
+    showToast('模板内容不能为空', 'error');
     return;
   }
 
@@ -176,17 +198,17 @@ async function saveTemplate() {
       template
     });
 
-    showToast(editingTemplateId ? 'Template updated' : 'Template created', 'success');
+    showToast(editingTemplateId ? '模板已更新' : '模板已创建', 'success');
     closeModal();
     loadTemplates();
   } catch (error) {
     console.error('Failed to save template:', error);
-    showToast('Failed to save template', 'error');
+    showToast('保存模板失败', 'error');
   }
 }
 
 async function deleteTemplate(templateId) {
-  if (!confirm('Are you sure you want to delete this template?')) {
+  if (!confirm('确定要删除此模板吗？')) {
     return;
   }
 
@@ -196,11 +218,11 @@ async function deleteTemplate(templateId) {
       templateId
     });
 
-    showToast('Template deleted', 'success');
+    showToast('模板已删除', 'success');
     loadTemplates();
   } catch (error) {
     console.error('Failed to delete template:', error);
-    showToast('Failed to delete template', 'error');
+    showToast('删除模板失败', 'error');
   }
 }
 
