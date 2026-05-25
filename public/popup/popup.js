@@ -4,17 +4,81 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateStatusDisplay();
 });
 
+// 验证用户信息是否有效
+async function validateUserSession(userData) {
+  if (!userData || !userData.token || !userData.uid) {
+    return false;
+  }
+  
+  try {
+    const apiUrl = CONFIG.API_BASE_URL + CONFIG.AUTH.USER_INFO;
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userData.token}`,
+        'UID': userData.uid
+      },
+      mode: 'cors',
+      cache: 'no-cache'
+    });
+    
+    if (!response.ok) {
+      return false;
+    }
+    
+    const data = await response.json();
+    
+    // 如果返回code为-1，表示未登录或token失效
+    if (data.code === -1) {
+      return false;
+    }
+    
+    return data.code === 0;
+  } catch (error) {
+    console.error('验证用户会话失败:', error);
+    return false;
+  }
+}
+
+// 清除本地登录数据
+async function clearAuthData() {
+  try {
+    await chrome.storage.local.remove('vue_printer_user_data');
+  } catch (error) {
+    console.error('清除登录数据失败:', error);
+  }
+}
+
 async function checkAuthStatus() {
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data');
     const userData = result.vue_printer_user_data;
     
-    if (!userData || Date.now() > userData.expiresAt) {
-      // 未登录或Token过期，跳转到登录界面
+    // 检查是否有完整的登录数据
+    if (!userData || !userData.token || !userData.uid) {
       window.location.href = 'auth.html';
+      return;
     }
+    
+    // 检查Token是否过期
+    if (Date.now() > userData.expiresAt) {
+      await clearAuthData();
+      window.location.href = 'auth.html';
+      return;
+    }
+    
+    // 调用用户信息接口验证会话有效性
+    const isValid = await validateUserSession(userData);
+    if (!isValid) {
+      await clearAuthData();
+      window.location.href = 'auth.html';
+      return;
+    }
+    
   } catch (error) {
     console.error('检查登录状态失败:', error);
+    await clearAuthData();
     window.location.href = 'auth.html';
   }
 }

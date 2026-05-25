@@ -7,17 +7,30 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshCaptcha();
 });
 
+// 清除本地登录数据
+async function clearAuthData() {
+  try {
+    await chrome.storage.local.remove('vue_printer_user_data');
+  } catch (error) {
+    console.error('清除登录数据失败:', error);
+  }
+}
+
 async function checkAuthStatus() {
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data');
     const userData = result.vue_printer_user_data;
     
-    if (userData && Date.now() < userData.expiresAt) {
-      // 已登录，跳转到主界面
-      window.location.href = 'popup.html';
+    if (!userData || !userData.token || !userData.uid || Date.now() > userData.expiresAt) {
+      // 未登录或缺少必要信息，停留在登录界面
+      return;
     }
+    
+    // 已登录，跳转到主界面
+    window.location.href = 'popup.html';
   } catch (error) {
     console.error('检查登录状态失败:', error);
+    await clearAuthData();
   }
 }
 
@@ -252,12 +265,15 @@ async function handleSubmit(e) {
       const userData = {
         uid: authData.data.uid,
         username: username,
+        token: authData.data.token || '',
         expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7天有效期
       };
       
-      // 登录成功才保存token
-      if (isLoginMode && authData.data.token) {
-        userData.token = authData.data.token;
+      // 确保token和uid都存在
+      if (!userData.uid || !userData.token) {
+        showMessage('登录失败：缺少必要的认证信息', 'error');
+        refreshCaptcha();
+        return;
       }
       
       await chrome.storage.local.set({

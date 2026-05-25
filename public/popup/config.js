@@ -18,7 +18,8 @@ const CONFIG = {
   // 认证接口
   AUTH: {
     LOGIN: '/v1/user/login/',
-    REGISTER: '/v1/user/register/'
+    REGISTER: '/v1/user/register/',
+    USER_INFO: '/v1/user/info/'
   },
   
   // 其他接口
