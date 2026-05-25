@@ -226,6 +226,7 @@ const resetSettings = () => {
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  width: 100%;
 }
 
 .setting-card {
@@ -345,6 +346,8 @@ const resetSettings = () => {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  width: 100%;
+  padding-top: 20px;
 }
 
 .btn {

@@ -86,8 +86,10 @@ const handleSettings = () => {
 
 <style scoped>
 .home-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
+  min-height: 100%;
 }
 
 .welcome-card {
@@ -122,6 +124,7 @@ const handleSettings = () => {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  width: 100%;
 }
 
 .stat-card {
@@ -178,6 +181,7 @@ const handleSettings = () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
+  width: 100%;
 }
 
 .action-btn {

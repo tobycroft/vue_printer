@@ -1,15 +1,15 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '../layout/Layout.vue'
 import Home from '../views/admin/Home.vue'
 import Settings from '../views/admin/Settings.vue'
 
 const routes = [
   {
-    path: '/admin',
+    path: '/',
     component: Layout,
     children: [
       {
-        path: 'home',
+        path: '',
         name: 'Home',
         component: Home,
         meta: { title: '首页' }
@@ -19,21 +19,17 @@ const routes = [
         name: 'Settings',
         component: Settings,
         meta: { title: '设置' }
-      },
-      {
-        path: '',
-        redirect: '/admin/home'
       }
     ]
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/admin/home'
+    redirect: '/'
   }
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 })
 

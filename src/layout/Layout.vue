@@ -112,6 +112,7 @@ const menus = ref([
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .content-header {
@@ -132,6 +133,8 @@ const menus = ref([
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  width: 100%;
+  min-height: 0;
 }
 
 /* 滚动条样式 */
