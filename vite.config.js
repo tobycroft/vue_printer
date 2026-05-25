@@ -44,4 +44,5 @@ export default defineConfig({
       },
     },
   },
+  base: './', // 使用相对路径，适配 Chrome Extension
 })
