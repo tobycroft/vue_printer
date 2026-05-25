@@ -50,6 +50,22 @@ async function getUserInfo(userData) {
   }
 }
 
+// 检测服务器连通性
+async function checkServerConnectivity() {
+  try {
+    const response = await fetch('http://127.0.0.1', {
+      method: 'HEAD',
+      mode: 'cors',
+      cache: 'no-cache',
+      timeout: 3000
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('服务器连通性检测失败:', error);
+    return false;
+  }
+}
+
 async function checkAuthStatus() {
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data');
@@ -71,12 +87,18 @@ function setupEventListeners() {
 }
 
 async function updateStatusDisplay() {
-  // 固定显示已连接状态
   // 服务器连接状态
   const serverStatus = document.getElementById('server-status');
   const serverStatusText = document.getElementById('server-status-text');
-  serverStatus.className = 'status-icon connected';
-  serverStatusText.textContent = '已连接';
+  
+  const isServerConnected = await checkServerConnectivity();
+  if (isServerConnected) {
+    serverStatus.className = 'status-icon connected';
+    serverStatusText.textContent = '已连接';
+  } else {
+    serverStatus.className = 'status-icon disconnected';
+    serverStatusText.textContent = '未连接';
+  }
   
   // 打印服务状态
   const printerStatus = document.getElementById('printer-status');

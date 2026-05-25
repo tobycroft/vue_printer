@@ -56,8 +56,11 @@ function setupFormListeners() {
 }
 
 // 初始化应用
-function initAuthApp() {
-  checkAuthStatus();
+async function initAuthApp() {
+  // 先检查登录状态，如果已登录直接跳转，不执行后续初始化
+  await checkAuthStatus();
+  
+  // 如果没有跳转，继续初始化
   setupFormListeners();
   
   // 初始化时设置确认密码字段的required属性
@@ -72,8 +75,8 @@ function initAuthApp() {
 }
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
-  initAuthApp();
+document.addEventListener('DOMContentLoaded', async () => {
+  await initAuthApp();
 });
 
 // 获取当前模式
