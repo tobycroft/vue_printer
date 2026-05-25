@@ -1,0 +1,33 @@
+body { font-family: Arial, Verdana, Helvetica, sans-serif; font-size: 12px; margin: 0; padding: 20px; background: #fff; }
+
+.container { max-width: 1000px; margin: 0 auto; background: #ebf4fb; border: solid 2px #b7ddf2; padding: 30px; }
+
+h1 { font-size: 18px; font-weight: bold; color: #333; border-bottom: solid 2px #b7ddf2; padding-bottom: 10px; margin: 0 0 25px 0; }
+
+h2 { font-size: 14px; font-weight: bold; color: #333; margin: 25px 0 15px 0; border-left: solid 3px #b7ddf2; padding-left: 10px; }
+
+.back-link { display: inline-block; margin-bottom: 20px; color: #666; text-decoration: none; font-weight: bold; }
+.back-link:hover { text-decoration: underline; color: #333; }
+
+.function-box { background: #e6f2ff; border: solid 2px #b7ddf2; padding: 15px; margin: 20px 0; }
+
+.function-name { font-family: "Courier New", monospace; font-size: 14px; font-weight: bold; color: #0000FF; }
+
+.parameter-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+.parameter-table th { background: #b7ddf2; color: #333; padding: 8px; text-align: left; font-weight: bold; }
+.parameter-table td { border: solid 1px #aacfe4; padding: 8px; }
+.parameter-table tr:nth-child(even) { background: #f5f9fc; }
+
+.param-name { font-weight: bold; color: #333; }
+
+.category-title { background: #b7ddf2; color: #333; padding: 6px 12px; font-weight: bold; margin: 15px 0 10px 0; }
+
+.barcode-list { display: inline; margin: 4px 8px 4px 0; color: #666; }
+.barcode-list.qrcode { color: #333; }
+
+.button-group { margin: 20px 0; }
+.button-group input[type="button"] { padding: 10px 25px; margin-right: 10px; font-size: 13px; cursor: pointer; border: solid 2px #0099cc; background: #0099cc; color: #fff; font-weight: bold; }
+.button-group input[type="button"]:hover { background: #0077a3; border-color: #0077a3; }
+
+.note-box { background: #e6f2ff; border: solid 1px #aacfe4; padding: 15px; margin: 20px 0; }
+.note-box strong { color: #333; }
