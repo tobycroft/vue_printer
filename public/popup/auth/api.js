@@ -1,111 +1,7 @@
-let isLoginMode = true;
+// API请求模块
 let captchaIdent = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-  checkAuthStatus();
-  setupFormListeners();
-  
-  // 初始化时设置确认密码字段的required属性
-  const confirmPasswordInput = document.getElementById('confirm-password');
-  if (isLoginMode) {
-    confirmPasswordInput.removeAttribute('required');
-  } else {
-    confirmPasswordInput.setAttribute('required', '');
-  }
-  
-  refreshCaptcha();
-});
-
-// 清除本地登录数据
-async function clearAuthData() {
-  try {
-    await chrome.storage.local.remove('vue_printer_user_data');
-  } catch (error) {
-    console.error('清除登录数据失败:', error);
-  }
-}
-
-async function checkAuthStatus() {
-  try {
-    const result = await chrome.storage.local.get('vue_printer_user_data');
-    const userData = result.vue_printer_user_data;
-    
-    if (!userData || !userData.token || !userData.uid || Date.now() > userData.expiresAt) {
-      // 未登录或缺少必要信息，停留在登录界面
-      return;
-    }
-    
-    // 已登录，跳转到主界面
-    window.location.href = 'popup.html';
-  } catch (error) {
-    console.error('检查登录状态失败:', error);
-    await clearAuthData();
-  }
-}
-
-function setupFormListeners() {
-  document.getElementById('auth-form').addEventListener('submit', handleSubmit);
-  document.getElementById('btn-refresh-captcha').addEventListener('click', refreshCaptcha);
-  document.getElementById('btn-toggle-mode').addEventListener('click', toggleAuthMode);
-}
-
-function toggleAuthMode() {
-  isLoginMode = !isLoginMode;
-  
-  const subtitle = document.getElementById('auth-subtitle');
-  const submitBtn = document.getElementById('auth-submit');
-  const switchText = document.getElementById('switch-text');
-  const confirmPasswordGroup = document.getElementById('confirm-password-group');
-  
-  if (isLoginMode) {
-    subtitle.textContent = '欢迎登录您的账户';
-    submitBtn.textContent = '登录';
-    switchText.innerHTML = '还没有账户？<button type="button" class="link-btn" onclick="toggleAuthMode()">立即注册</button>';
-    confirmPasswordGroup.style.display = 'none';
-  } else {
-    subtitle.textContent = '创建新账户开始使用';
-    submitBtn.textContent = '注册';
-    switchText.innerHTML = '已有账户？<button type="button" class="link-btn" onclick="toggleAuthMode()">立即登录</button>';
-    confirmPasswordGroup.style.display = 'block';
-  }
-  
-  // 清空验证码
-  document.getElementById('captcha').value = '';
-  refreshCaptcha();
-}
-
-// 带超时的fetch请求
-async function fetchWithTimeout(url, options, timeout = CONFIG.TIMEOUT) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-// 显示验证码加载状态
-function showCaptchaLoading() {
-  const loadingEl = document.getElementById('captcha-loading');
-  const imageEl = document.getElementById('captcha-img');
-  if (loadingEl) loadingEl.classList.remove('hidden');
-  if (imageEl) imageEl.classList.remove('visible');
-}
-
-// 隐藏验证码加载状态，显示图片
-function hideCaptchaLoading() {
-  const loadingEl = document.getElementById('captcha-loading');
-  const imageEl = document.getElementById('captcha-img');
-  if (loadingEl) loadingEl.classList.add('hidden');
-  if (imageEl) imageEl.classList.add('visible');
-}
-
+// 刷新验证码
 async function refreshCaptcha() {
   const maxRetries = 2;
   const retryDelay = 500;
@@ -208,6 +104,7 @@ async function refreshCaptcha() {
   hideCaptchaLoading();
 }
 
+// 处理登录/注册提交
 async function handleSubmit(e) {
   e.preventDefault();
   
@@ -309,23 +206,12 @@ async function handleSubmit(e) {
   }
 }
 
-function showMessage(message, type) {
-  const errorElement = document.getElementById('error-message');
-  const successElement = document.getElementById('success-message');
-  
-  if (type === 'error') {
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    successElement.style.display = 'none';
-  } else {
-    successElement.textContent = message;
-    successElement.style.display = 'block';
-    errorElement.style.display = 'none';
-  }
-  
-  // 3秒后自动隐藏
-  setTimeout(() => {
-    errorElement.style.display = 'none';
-    successElement.style.display = 'none';
-  }, 3000);
+// 获取当前验证码标识
+function getCaptchaIdent() {
+  return captchaIdent;
+}
+
+// 设置验证码标识
+function setCaptchaIdent(ident) {
+  captchaIdent = ident;
 }
