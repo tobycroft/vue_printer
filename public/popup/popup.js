@@ -167,7 +167,7 @@ async function openSettings() {
     
     if (userData && Date.now() < userData.expiresAt) {
       // 已登录，在新标签页打开管理后台页面
-      chrome.tabs.create({ url: chrome.runtime.getURL('index.html') });
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html#/admin/home') });
     } else {
       // 未登录，跳转到登录页面
       window.location.href = 'auth.html';
