@@ -145,12 +145,13 @@ export async function loginWithForm(username, password, ident, code) {
           uid: response.data.uid,
           token: response.data.token || '',
           expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
-        }
+        },
+        message: response.echo || '登录成功'
       };
     } else {
       return {
         success: false,
-        message: response.message || '登录失败'
+        message: response.echo || '操作失败'
       };
     }
   } catch (error) {
@@ -220,12 +221,13 @@ export async function registerWithForm(username, password, ident, code) {
           uid: response.data.uid,
           token: response.data.token || '',
           expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
-        }
+        },
+        message: response.echo || '注册成功'
       };
     } else {
       return {
         success: false,
-        message: response.message || '注册失败'
+        message: response.echo || '操作失败'
       };
     }
   } catch (error) {
@@ -255,12 +257,13 @@ export async function getUserInfo(uid, token) {
     if (response.code === 0 && response.data) {
       return {
         success: true,
-        data: response.data
+        data: response.data,
+        message: response.echo || '获取成功'
       };
-    } else if (response.code === -1) {
+    } else {
       return {
         success: false,
-        message: response.message || '获取用户信息失败'
+        message: response.echo || '获取失败'
       };
     }
   } catch (error) {
@@ -344,12 +347,13 @@ export async function createCaptcha(timeout = 10000) {
         data: {
           ident: response.data.ident,
           image: response.data.image
-        }
+        },
+        message: response.echo || '获取成功'
       };
     } else {
       return {
         success: false,
-        message: response.message || '获取验证码失败'
+        message: response.echo || '获取失败'
       };
     }
   } catch (error) {

@@ -268,7 +268,7 @@ async function handleSubmit() {
       }
       
       if (!userData.uid || !userData.token) {
-        showMessage('登录失败：缺少必要的认证信息', 'error')
+        showMessage(result.message || '缺少必要的认证信息', 'error')
         refreshCaptcha()
         return
       }
@@ -277,14 +277,14 @@ async function handleSubmit() {
         vue_printer_user_data: userData
       })
       
-      showMessage(isLoginMode.value ? '登录成功！' : '注册成功！', 'success')
+      showMessage(result.message || '操作成功', 'success')
       
       // 延迟跳转到主界面
       setTimeout(() => {
         window.location.href = 'popup.html'
       }, 1000)
     } else {
-      showMessage(result.message || (isLoginMode.value ? '登录失败' : '注册失败'), 'error')
+      showMessage(result.message || '操作失败', 'error')
       refreshCaptcha()
     }
   } catch (error) {
