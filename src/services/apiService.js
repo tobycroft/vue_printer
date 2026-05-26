@@ -281,10 +281,25 @@ export async function getUserInfo(uid, token) {
  */
 export async function getUserInfoDetail(uid) {
   try {
-    const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}');
-    const token = authInfo.token || '';
+    // 从chrome.storage.local获取token
+    let token = ''
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      const result = await new Promise((resolve) => {
+        chrome.storage.local.get('vue_printer_user_data', resolve)
+      })
+      
+      if (result && result.vue_printer_user_data) {
+        token = result.vue_printer_user_data.token || ''
+      }
+    }
+    
+    // 如果chrome.storage中没有，尝试从localStorage获取（兼容旧版本）
+    if (!token) {
+      const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
+      token = authInfo.token || ''
+    }
 
-    const response = await fetch(`${API_BASE_URL}/v1/user/info/get?uid=${uid}`, {
+    const response = await fetch(`${API_BASE_URL}/v1/user/info/get`, {
       method: 'GET',
       headers: {
         'uid': uid,
