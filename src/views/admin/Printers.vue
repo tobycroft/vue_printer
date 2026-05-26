@@ -219,6 +219,12 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
+}
+
+.page-header .header-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .page-header .header-text h2 {
@@ -226,6 +232,9 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 600;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page-header .header-text p {
@@ -246,6 +255,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .page-header .btn:hover {
