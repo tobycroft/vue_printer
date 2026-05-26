@@ -85,3 +85,41 @@ export async function testPrinterConnection(id) {
     };
   }
 }
+
+/**
+ * 新增打印机设备
+ * @param {Object} printer - 打印机信息
+ * @param {string} printer.device - 打印机名称
+ * @param {string} printer.url - 打印机地址
+ * @returns {Promise} 操作结果
+ */
+export async function addPrinterDevice(printer) {
+  try {
+    const response = await request('/v1/device/info/add', {
+      method: 'POST',
+      body: JSON.stringify({
+        device: printer.device,
+        url: printer.url
+      })
+    });
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '添加打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '添加打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('添加打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
