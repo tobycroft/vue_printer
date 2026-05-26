@@ -235,17 +235,17 @@ onMounted(() => {
 }
 
 .page-header .btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: #00d8ff;
   color: #1a1a1a;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .page-header .btn:hover {
@@ -253,7 +253,7 @@ onMounted(() => {
 }
 
 .page-header .btn-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* 加载状态 */
