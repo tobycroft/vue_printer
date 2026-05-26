@@ -117,16 +117,33 @@ const fetchUserInfo = async () => {
   userInfo.value = null
 
   try {
-    // 从本地存储获取认证信息
-    const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
+    // 从chrome.storage.local获取认证信息
+    let uid = null
     
-    if (!authInfo || !authInfo.uid) {
+    // 尝试从chrome.storage获取
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      const result = await new Promise((resolve) => {
+        chrome.storage.local.get('vue_printer_user_data', resolve)
+      })
+      
+      if (result && result.vue_printer_user_data) {
+        uid = result.vue_printer_user_data.uid
+      }
+    }
+    
+    // 如果chrome.storage中没有，尝试从localStorage获取（兼容旧版本）
+    if (!uid) {
+      const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
+      uid = authInfo.uid
+    }
+    
+    if (!uid) {
       error.value = '未登录'
       loading.value = false
       return
     }
 
-    const result = await getUserInfoDetail(authInfo.uid)
+    const result = await getUserInfoDetail(uid)
     
     if (result.success) {
       userInfo.value = result.data
