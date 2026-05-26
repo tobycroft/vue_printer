@@ -114,6 +114,7 @@ const formatDate = (dateStr) => {
 const fetchUserInfo = async () => {
   loading.value = true
   error.value = null
+  userInfo.value = null
 
   try {
     // 从本地存储获取认证信息
