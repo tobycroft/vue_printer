@@ -54,8 +54,12 @@
           />
           <button type="button" class="captcha-btn" @click="refreshCaptcha">
             <div v-if="captchaLoading" class="captcha-loading">获取中...</div>
+            <div v-else-if="captchaFailed" class="captcha-failed">
+              <span>获取失败</span>
+              <span class="retry-hint">点击重试</span>
+            </div>
             <img
-              v-show="!captchaLoading && captchaImage"
+              v-show="!captchaLoading && !captchaFailed && captchaImage"
               :src="captchaImage"
               alt="验证码"
               class="captcha-image"
@@ -102,6 +106,7 @@ const CONFIG = {
 const isLoginMode = ref(true)
 const submitting = ref(false)
 const captchaLoading = ref(false)
+const captchaFailed = ref(false)
 const captchaIdent = ref(null)
 const captchaImage = ref('')
 const errorMessage = ref('')
@@ -188,6 +193,8 @@ async function refreshCaptcha() {
   const retryDelay = 500
   const apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE
   
+  // 重置失败状态
+  captchaFailed.value = false
   captchaLoading.value = true
   
   for (let retry = 0; retry <= maxRetries; retry++) {
@@ -255,6 +262,7 @@ async function refreshCaptcha() {
         if (retry >= maxRetries) {
           showMessage(`验证码获取失败: ${errorMsg}`, 'error')
           captchaLoading.value = false
+          captchaFailed.value = true
           return
         } else {
           await new Promise(resolve => setTimeout(resolve, retryDelay))
@@ -264,6 +272,7 @@ async function refreshCaptcha() {
       if (retry >= maxRetries) {
         showMessage(`连接失败: ${error.message}`, 'error')
         captchaLoading.value = false
+        captchaFailed.value = true
         return
       } else {
         await new Promise(resolve => setTimeout(resolve, retryDelay))
@@ -275,6 +284,7 @@ async function refreshCaptcha() {
   captchaIdent.value = null
   captchaImage.value = ''
   captchaLoading.value = false
+  captchaFailed.value = true
 }
 
 // 切换登录/注册模式
@@ -479,6 +489,32 @@ async function handleSubmit() {
   font-size: 12px;
   color: #666;
   z-index: 10;
+}
+
+.captcha-failed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffebee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.captcha-failed span:first-child {
+  font-size: 12px;
+  color: #c62828;
+  font-weight: 500;
+}
+
+.retry-hint {
+  font-size: 10px;
+  color: #e57373;
 }
 
 .captcha-image {
