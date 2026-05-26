@@ -3,6 +3,7 @@ export {
   login,
   register, 
   getUserInfo,
+  getUserInfoDetail,
   refreshToken,
   logout 
 } from './apiService';

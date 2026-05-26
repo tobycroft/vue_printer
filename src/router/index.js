@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import Layout from '../layout/Layout.vue'
 import Home from '../views/admin/Home.vue'
+import UserInfo from '../views/admin/UserInfo.vue'
 import Settings from '../views/admin/Settings.vue'
 import Templates from '../views/admin/Templates.vue'
 import Connection from '../views/admin/Connection.vue'
@@ -21,6 +22,12 @@ const routes = [
         name: 'Home',
         component: Home,
         meta: { title: '首页' }
+      },
+      {
+        path: 'userinfo',
+        name: 'UserInfo',
+        component: UserInfo,
+        meta: { title: '用户信息' }
       },
       {
         path: 'templates',

@@ -239,7 +239,7 @@ export async function registerWithForm(username, password, ident, code) {
 }
 
 /**
- * 获取用户信息
+ * 获取用户基本信息 (username)
  * @param {string} uid - 用户ID
  * @param {string} token - 用户Token
  * @returns {Promise} 用户信息
@@ -267,6 +267,47 @@ export async function getUserInfo(uid, token) {
       };
     }
   } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 获取用户详细信息 (nickname等)
+ * @param {string} uid - 用户ID
+ * @returns {Promise} 用户详细信息
+ */
+export async function getUserInfoDetail(uid) {
+  try {
+    const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}');
+    const token = authInfo.token || '';
+
+    const response = await fetch(`${API_BASE_URL}/v1/user/info/get?uid=${uid}`, {
+      method: 'GET',
+      headers: {
+        'uid': uid,
+        'token': token
+      }
+    });
+
+    const data = await response.json();
+
+    if (data.code === 0 && data.data) {
+      return {
+        success: true,
+        data: data.data,
+        message: data.echo || '获取成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: data.echo || '获取失败'
+      };
+    }
+  } catch (error) {
+    console.error('获取用户详细信息错误:', error);
     return {
       success: false,
       message: error.message
