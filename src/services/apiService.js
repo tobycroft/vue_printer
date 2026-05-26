@@ -1,0 +1,388 @@
+// API基础配置
+const API_BASE_URL = 'https://printapi.tuuz.ltd:444';
+
+/**
+ * 通用请求方法
+ * @param {string} url - 请求URL
+ * @param {Object} options - 请求选项
+ * @returns {Promise} 响应数据
+ */
+async function request(url, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || '请求失败');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API请求错误:', error);
+    throw error;
+  }
+}
+
+/**
+ * 带超时的请求方法
+ * @param {string} url - 请求URL
+ * @param {Object} options - 请求选项
+ * @param {number} timeout - 超时时间(毫秒)
+ * @returns {Promise} 响应数据
+ */
+async function requestWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      signal: controller.signal
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || '请求失败');
+    }
+    
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * 表单数据请求方法
+ * @param {string} url - 请求URL
+ * @param {FormData} formData - 表单数据
+ * @param {Object} headers - 额外请求头
+ * @returns {Promise} 响应数据
+ */
+async function requestWithForm(url, formData, headers = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...headers
+      }
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('表单请求错误:', error);
+    throw error;
+  }
+}
+
+// ==================== 认证相关API ====================
+
+/**
+ * 用户登录 (JSON方式)
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} captcha - 验证码
+ * @returns {Promise} 登录结果
+ */
+export async function login(username, password, captcha) {
+  try {
+    const response = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username,
+        password,
+        captcha
+      })
+    });
+
+    return {
+      success: true,
+      data: {
+        uid: response.uid,
+        token: response.token,
+        expiresAt: response.expiresAt
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 用户登录 (FormData方式)
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} ident - 验证码标识
+ * @param {string} code - 验证码
+ * @returns {Promise} 登录结果
+ */
+export async function loginWithForm(username, password, ident, code) {
+  const formData = new FormData();
+  formData.append('username', username);
+  formData.append('password', password);
+  formData.append('ident', ident);
+  formData.append('code', code);
+
+  try {
+    const response = await requestWithForm('/v1/user/login/', formData);
+    
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: {
+          uid: response.data.uid,
+          token: response.data.token || '',
+          expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
+        }
+      };
+    } else {
+      return {
+        success: false,
+        message: response.message || '登录失败'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 用户注册 (JSON方式)
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} captcha - 验证码
+ * @returns {Promise} 注册结果
+ */
+export async function register(username, password, captcha) {
+  try {
+    const response = await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username,
+        password,
+        captcha
+      })
+    });
+
+    return {
+      success: true,
+      data: {
+        uid: response.uid,
+        token: response.token,
+        expiresAt: response.expiresAt
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 用户注册 (FormData方式)
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} ident - 验证码标识
+ * @param {string} code - 验证码
+ * @returns {Promise} 注册结果
+ */
+export async function registerWithForm(username, password, ident, code) {
+  const formData = new FormData();
+  formData.append('username', username);
+  formData.append('password', password);
+  formData.append('ident', ident);
+  formData.append('code', code);
+
+  try {
+    const response = await requestWithForm('/v1/user/register/', formData);
+    
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: {
+          uid: response.data.uid,
+          token: response.data.token || '',
+          expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
+        }
+      };
+    } else {
+      return {
+        success: false,
+        message: response.message || '注册失败'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 获取用户信息
+ * @param {string} uid - 用户ID
+ * @param {string} token - 用户Token
+ * @returns {Promise} 用户信息
+ */
+export async function getUserInfo(uid, token) {
+  try {
+    const response = await request('/v1/user/info/', {
+      method: 'POST',
+      headers: {
+        'uid': uid,
+        'token': token
+      }
+    });
+
+    if (response.code === 0 && response.data) {
+      return {
+        success: true,
+        data: response.data
+      };
+    } else if (response.code === -1) {
+      return {
+        success: false,
+        message: response.message || '获取用户信息失败'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 刷新Token
+ * @param {string} refreshToken - 刷新Token
+ * @returns {Promise} 新的Token信息
+ */
+export async function refreshToken(refreshToken) {
+  try {
+    const response = await request('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({
+        refreshToken
+      })
+    });
+
+    return {
+      success: true,
+      data: {
+        token: response.token,
+        expiresAt: response.expiresAt
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+/**
+ * 用户登出
+ * @param {string} token - 用户Token
+ * @returns {Promise} 登出结果
+ */
+export async function logout(token) {
+  try {
+    await request('/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    return {
+      success: true
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+}
+
+// ==================== 验证码相关API ====================
+
+/**
+ * 创建验证码
+ * @param {number} timeout - 超时时间(毫秒)
+ * @returns {Promise} 验证码信息
+ */
+export async function createCaptcha(timeout = 10000) {
+  try {
+    const response = await requestWithTimeout('/v1/index/captcha/create', {
+      method: 'GET'
+    }, timeout);
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: {
+          ident: response.data.ident,
+          image: response.data.image
+        }
+      };
+    } else {
+      return {
+        success: false,
+        message: response.message || '获取验证码失败'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || '网络请求超时'
+    };
+  }
+}
+
+// ==================== 服务器检测API ====================
+
+/**
+ * 检测服务器连通性
+ * @param {number} timeout - 超时时间(毫秒)
+ * @returns {Promise<boolean>} 是否连通
+ */
+export async function checkServerConnectivity(timeout = 3000) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    await fetch(API_BASE_URL, {
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    return true;
+  } catch (error) {
+    console.error('服务器连通性检测失败:', error);
+    return false;
+  }
+}

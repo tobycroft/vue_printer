@@ -42,6 +42,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { getUserInfo, checkServerConnectivity } from '@/services/apiService'
 
 const serverStatus = ref({
   class: 'checking',
@@ -75,49 +76,22 @@ async function checkAuthStatus() {
 }
 
 // 检测服务器连通性
-async function checkServerConnectivity() {
-  try {
-    await fetch('https://printapi.tuuz.ltd:444', {
-      method: 'HEAD',
-      mode: 'no-cors',
-      cache: 'no-cache',
-      timeout: 3000
-    })
-    return true
-  } catch (error) {
-    console.error('服务器连通性检测失败:', error)
-    return false
-  }
+async function checkServer() {
+  return await checkServerConnectivity(3000)
 }
 
 // 获取用户信息
-async function getUserInfo(userData) {
+async function getUserInfoData(userData) {
   if (!userData || !userData.token || !userData.uid) {
     return null
   }
   
   try {
-    const apiUrl = 'https://printapi.tuuz.ltd:444/v1/user/info/'
+    const result = await getUserInfo(userData.uid, userData.token)
     
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'uid': userData.uid,
-        'token': userData.token
-      },
-      mode: 'cors',
-      cache: 'no-cache'
-    })
-    
-    if (!response.ok) {
-      return null
-    }
-    
-    const data = await response.json()
-    
-    if (data.code === 0 && data.data) {
-      return data.data
-    } else if (data.code === -1) {
+    if (result.success) {
+      return result.data
+    } else if (result.message && result.message.includes('未登录')) {
       // code=-1表示未登录或token已过期，需要退出登录
       console.log('用户信息接口返回未登录，自动退出登录')
       await handleLogout(false)
@@ -154,7 +128,7 @@ async function updateStatusDisplay() {
     
     if (userData && Date.now() < userData.expiresAt) {
       // 尝试获取用户信息
-      const userInfo = await getUserInfo(userData)
+      const userInfo = await getUserInfoData(userData)
       
       if (userInfo) {
         if (userInfo.username) {
