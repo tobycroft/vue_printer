@@ -254,6 +254,8 @@ async function refreshCaptcha() {
         const errorMsg = data.echo || '验证码服务返回错误'
         if (retry >= maxRetries) {
           showMessage(`验证码获取失败: ${errorMsg}`, 'error')
+          captchaLoading.value = false
+          return
         } else {
           await new Promise(resolve => setTimeout(resolve, retryDelay))
         }
@@ -261,21 +263,17 @@ async function refreshCaptcha() {
     } catch (error) {
       if (retry >= maxRetries) {
         showMessage(`连接失败: ${error.message}`, 'error')
+        captchaLoading.value = false
+        return
       } else {
         await new Promise(resolve => setTimeout(resolve, retryDelay))
       }
     }
   }
   
-  // 使用测试模式
-  captchaIdent.value = 'test-ident'
-  captchaImage.value = `data:image/svg+xml;base64,${btoa(`
-    <svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#f0f0f0"/>
-      <text x="60" y="25" font-family="monospace" font-size="20" text-anchor="middle" fill="#333">1234</text>
-    </svg>
-  `)}`
-  
+  // 所有重试都失败后，清空验证码状态
+  captchaIdent.value = null
+  captchaImage.value = ''
   captchaLoading.value = false
 }
 
