@@ -253,14 +253,14 @@ async function refreshCaptcha() {
       } else {
         const errorMsg = data.echo || '验证码服务返回错误'
         if (retry >= maxRetries) {
-          showMessage(`验证码获取失败: ${errorMsg}，使用本地测试模式`, 'error')
+          showMessage(`验证码获取失败: ${errorMsg}`, 'error')
         } else {
           await new Promise(resolve => setTimeout(resolve, retryDelay))
         }
       }
     } catch (error) {
       if (retry >= maxRetries) {
-        showMessage(`连接失败: ${error.message}，使用本地测试模式`, 'error')
+        showMessage(`连接失败: ${error.message}`, 'error')
       } else {
         await new Promise(resolve => setTimeout(resolve, retryDelay))
       }
