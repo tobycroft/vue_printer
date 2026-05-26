@@ -91,7 +91,7 @@ import { ref, onMounted } from 'vue'
 
 // API配置
 const CONFIG = {
-  API_BASE_URL: 'http://127.0.0.1',
+  API_BASE_URL: 'https://printapi.tuuz.ltd:444',
   TIMEOUT: 10000,
   CAPTCHA: {
     CREATE: '/v1/index/captcha/create'

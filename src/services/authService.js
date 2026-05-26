@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://your-api-url'; // 请替换为实际的API地址
+const API_BASE_URL = 'https://printapi.tuuz.ltd:444'; // API地址
 
 class AuthService {
   constructor() {

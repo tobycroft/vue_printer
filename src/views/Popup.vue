@@ -77,7 +77,7 @@ async function checkAuthStatus() {
 // 检测服务器连通性
 async function checkServerConnectivity() {
   try {
-    await fetch('http://127.0.0.1:80', {
+    await fetch('https://printapi.tuuz.ltd:444', {
       method: 'HEAD',
       mode: 'no-cors',
       cache: 'no-cache',
@@ -97,7 +97,7 @@ async function getUserInfo(userData) {
   }
   
   try {
-    const apiUrl = 'http://127.0.0.1/v1/user/info/'
+    const apiUrl = 'https://printapi.tuuz.ltd:444/v1/user/info/'
     
     const response = await fetch(apiUrl, {
       method: 'POST',
