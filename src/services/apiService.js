@@ -420,6 +420,10 @@ export async function createCaptcha(timeout = 10000) {
   }
 }
 
+// 导出基础请求方法
+
+export { request, requestWithTimeout, requestWithForm };
+
 // ==================== 服务器检测API ====================
 
 /**

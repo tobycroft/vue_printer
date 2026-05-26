@@ -7,6 +7,7 @@ import Templates from '../views/admin/Templates.vue'
 import Connection from '../views/admin/Connection.vue'
 import About from '../views/admin/About.vue'
 import Help from '../views/admin/Help.vue'
+import Printers from '../views/admin/Printers.vue'
 
 const routes = [
   {
@@ -58,6 +59,12 @@ const routes = [
         name: 'Help',
         component: Help,
         meta: { title: '帮助' }
+      },
+      {
+        path: 'printers',
+        name: 'Printers',
+        component: Printers,
+        meta: { title: '打印机管理' }
       }
     ]
   },
