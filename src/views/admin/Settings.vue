@@ -173,16 +173,20 @@ const settings = ref({
 const defaultSettings = { ...settings.value }
 
 onMounted(async () => {
-  const savedSettings = await storageService.get('printSettings')
-  if (savedSettings) {
-    settings.value = { ...settings.value, ...savedSettings }
+  const result = await storageService.getSettings()
+  if (result.success && result.data) {
+    settings.value = { ...settings.value, ...result.data }
   }
 })
 
 const saveSettings = async () => {
   try {
-    await storageService.set('printSettings', settings.value)
-    alert('设置已保存')
+    const result = await storageService.saveSettings(settings.value)
+    if (result.success) {
+      alert('设置已保存')
+    } else {
+      alert(result.message || '保存设置失败')
+    }
   } catch (error) {
     console.error('保存设置失败:', error)
     alert('保存设置失败，请重试')
