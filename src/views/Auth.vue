@@ -88,19 +88,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
-// API配置
-const CONFIG = {
-  API_BASE_URL: 'http://127.0.0.1',
-  TIMEOUT: 10000,
-  CAPTCHA: {
-    CREATE: '/v1/index/captcha/create'
-  },
-  AUTH: {
-    LOGIN: '/v1/user/login/',
-    REGISTER: '/v1/user/register/'
-  }
-}
+import { loginWithForm, registerWithForm, createCaptcha } from '../services/apiService'
 
 // 状态
 const isLoginMode = ref(true)
@@ -171,120 +159,22 @@ function showMessage(message, type) {
   }, 3000)
 }
 
-// 带超时的fetch
-async function fetchWithTimeout(url, options, timeout = CONFIG.TIMEOUT) {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    })
-    return response
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
-
-// 刷新验证码
+// 刷新验证码 - 使用apiService
 async function refreshCaptcha() {
-  const maxRetries = 2
-  const retryDelay = 500
-  const apiUrl = CONFIG.API_BASE_URL + CONFIG.CAPTCHA.CREATE
-  
-  // 重置失败状态
   captchaFailed.value = false
   captchaLoading.value = true
   
-  for (let retry = 0; retry <= maxRetries; retry++) {
-    try {
-      const response = await fetchWithTimeout(apiUrl, {
-        method: 'POST',
-        mode: 'cors',
-        cache: 'no-cache'
-      })
-      
-      if (!response.ok) {
-        if (retry < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-        }
-        continue
-      }
-      
-      let responseText
-      try {
-        responseText = await response.text()
-      } catch (e) {
-        if (retry < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-        }
-        continue
-      }
-      
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (e) {
-        if (retry < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-        }
-        continue
-      }
-      
-      if (data.code === 0) {
-        if (!data.data) {
-          if (retry < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, retryDelay))
-          }
-          continue
-        }
-        
-        const ident = data.data.ident || data.data.id || data.data.uuid || null
-        const image = data.data.image || data.data.img || null
-        
-        if (!ident || !image) {
-          if (retry < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, retryDelay))
-          }
-          continue
-        }
-        
-        captchaIdent.value = ident
-        captchaImage.value = `data:image/png;base64,${image}`
-        
-        captchaLoading.value = false
-        errorMessage.value = ''
-        
-        return
-      } else {
-        const errorMsg = data.echo || '验证码服务返回错误'
-        if (retry >= maxRetries) {
-          showMessage(`验证码获取失败: ${errorMsg}`, 'error')
-          captchaLoading.value = false
-          captchaFailed.value = true
-          return
-        } else {
-          await new Promise(resolve => setTimeout(resolve, retryDelay))
-        }
-      }
-    } catch (error) {
-      if (retry >= maxRetries) {
-        showMessage(`连接失败: ${error.message}`, 'error')
-        captchaLoading.value = false
-        captchaFailed.value = true
-        return
-      } else {
-        await new Promise(resolve => setTimeout(resolve, retryDelay))
-      }
-    }
-  }
+  const result = await createCaptcha()
   
-  // 所有重试都失败后，清空验证码状态
-  captchaIdent.value = null
-  captchaImage.value = ''
-  captchaLoading.value = false
-  captchaFailed.value = true
+  if (result.success && result.data) {
+    captchaIdent.value = result.data.ident
+    captchaImage.value = `data:image/png;base64,${result.data.image}`
+    captchaLoading.value = false
+  } else {
+    showMessage(`验证码获取失败: ${result.message || '未知错误'}`, 'error')
+    captchaLoading.value = false
+    captchaFailed.value = true
+  }
 }
 
 // 切换登录/注册模式
@@ -323,36 +213,21 @@ async function handleSubmit() {
   submitting.value = true
   
   try {
-    // 检查ident是否有效
-    if (captchaIdent.value !== 'test-ident' && (!captchaIdent.value || captchaIdent.value.trim() === '')) {
-      showMessage('验证码标识无效，请刷新验证码', 'error')
-      refreshCaptcha()
-      return
-    }
+    const authFunc = isLoginMode.value ? loginWithForm : registerWithForm
+    const result = await authFunc(
+      formData.value.username,
+      formData.value.password,
+      captchaIdent.value,
+      formData.value.captcha
+    )
     
-    const apiUrl = CONFIG.API_BASE_URL + (isLoginMode.value ? CONFIG.AUTH.LOGIN : CONFIG.AUTH.REGISTER)
-    console.log(`正在调用${isLoginMode.value ? '登录' : '注册'}接口:`, apiUrl)
-    
-    const formDataObj = new FormData()
-    formDataObj.append('username', formData.value.username)
-    formDataObj.append('password', formData.value.password)
-    formDataObj.append('ident', captchaIdent.value)
-    formDataObj.append('code', formData.value.captcha)
-    
-    const authResponse = await fetch(apiUrl, {
-      method: 'POST',
-      body: formDataObj
-    })
-    
-    const authData = await authResponse.json()
-    
-    if (authData.code === 0) {
+    if (result.success) {
       // 保存用户数据
       const userData = {
-        uid: authData.data.uid,
+        uid: result.data.uid,
         username: formData.value.username,
-        token: authData.data.token || '',
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7天有效期
+        token: result.data.token || '',
+        expiresAt: result.data.expiresAt
       }
       
       if (!userData.uid || !userData.token) {
@@ -372,7 +247,7 @@ async function handleSubmit() {
         window.location.href = 'popup.html'
       }, 1000)
     } else {
-      showMessage(authData.echo || (isLoginMode.value ? '登录失败' : '注册失败'), 'error')
+      showMessage(result.message || (isLoginMode.value ? '登录失败' : '注册失败'), 'error')
       refreshCaptcha()
     }
   } catch (error) {
