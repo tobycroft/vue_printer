@@ -37,39 +37,9 @@
           <span class="info-value">{{ userInfo.nickname || '-' }}</span>
         </div>
 
-        <div class="info-item">
-          <label>手机号</label>
-          <span class="info-value">{{ userInfo.phone || '-' }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>邮箱</label>
-          <span class="info-value">{{ userInfo.email || '-' }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>性别</label>
-          <span class="info-value">{{ getGenderText(userInfo.gender) }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>生日</label>
-          <span class="info-value">{{ userInfo.birthday || '-' }}</span>
-        </div>
-
-        <div class="info-item full-width">
-          <label>地址</label>
-          <span class="info-value">{{ userInfo.address || '-' }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>注册时间</label>
-          <span class="info-value">{{ formatDate(userInfo.created_at) }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>更新时间</label>
-          <span class="info-value">{{ formatDate(userInfo.updated_at) }}</span>
+        <div v-if="userInfo.username" class="info-item">
+          <label>用户名</label>
+          <span class="info-value">{{ userInfo.username }}</span>
         </div>
       </div>
     </div>
@@ -89,17 +59,7 @@ const loading = ref(false)
 const error = ref(null)
 const userInfo = ref(null)
 
-// 获取性别文本
-const getGenderText = (gender) => {
-  const genderMap = {
-    'male': '男',
-    'female': '女',
-    'secret': '保密'
-  }
-  return genderMap[gender] || '-'
-}
-
-// 格式化日期
+// 格式化日期（备用）
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   try {
