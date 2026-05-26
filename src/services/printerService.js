@@ -1,5 +1,5 @@
 // 打印机管理相关API
-import { request } from './apiService'
+import { request, requestWithForm } from './apiService'
 
 /**
  * 获取打印机列表
@@ -95,13 +95,11 @@ export async function testPrinterConnection(id) {
  */
 export async function addPrinterDevice(printer) {
   try {
-    const response = await request('/v1/device/info/add', {
-      method: 'POST',
-      body: JSON.stringify({
-        device: printer.device,
-        url: printer.url
-      })
-    });
+    const formData = new FormData();
+    formData.append('device', printer.device);
+    formData.append('url', printer.url);
+
+    const response = await requestWithForm('/v1/device/info/add', formData);
 
     if (response.code === 0) {
       return {
