@@ -52,9 +52,10 @@
           </div>
         </div>
         <div class="printer-actions">
-          <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
-          <button class="btn btn-secondary" @click="testPrinter(printer)">测试打印</button>
-        </div>
+        <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
+        <button class="btn btn-secondary" @click="showEditModal(printer)">编辑</button>
+        <button class="btn btn-danger" @click="deletePrinter(printer.id)">删除</button>
+      </div>
       </div>
     </div>
 
@@ -101,12 +102,50 @@
         </div>
       </div>
     </div>
+
+    <!-- 编辑打印机弹窗 -->
+    <div v-if="showEditModalRef.value" class="modal-overlay" @click.self="showEditModalRef.value = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>编辑打印机</h3>
+          <button class="close-btn" @click="showEditModalRef.value = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-device-name">打印机名称</label>
+            <input
+              id="edit-device-name"
+              v-model="editForm.device"
+              type="text"
+              placeholder="请输入打印机名称"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-device-url">打印机地址</label>
+            <input
+              id="edit-device-url"
+              v-model="editForm.url"
+              type="text"
+              placeholder="例如: http://192.168.1.100:8080"
+              class="form-control"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showEditModalRef.value = false">取消</button>
+          <button class="btn btn-primary" @click="editPrinter" :disabled="editing">
+            {{ editing ? '保存中...' : '保存修改' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getPrinters, addPrinterDevice } from '@/services/printerService'
+import { getPrinters, addPrinterDevice, updatePrinterDevice, deletePrinterDevice } from '@/services/printerService'
 
 const loading = ref(false)
 const error = ref(null)
@@ -122,6 +161,15 @@ const addForm = reactive({
   url: ''
 })
 const adding = ref(false)
+
+// 编辑打印机弹窗
+const showEditModalRef = ref(false)
+const editForm = reactive({
+  id: '',
+  device: '',
+  url: ''
+})
+const editing = ref(false)
 
 // 格式化日期
 const formatDate = (dateStr) => {
@@ -162,10 +210,34 @@ const viewPrinter = (printer) => {
   // 可以跳转到详情页面或弹出详情对话框
 }
 
-// 测试打印机
-const testPrinter = (printer) => {
-  console.log('测试打印机:', printer)
-  // 可以实现测试打印功能
+// 显示编辑弹窗
+const showEditModal = (printer) => {
+  editForm.id = printer.id
+  editForm.device = printer.device
+  editForm.url = printer.url
+  showEditModalRef.value = true
+}
+
+// 删除打印机
+const deletePrinter = async (id) => {
+  if (!confirm('确定要删除该打印机吗？')) {
+    return
+  }
+
+  try {
+    const result = await deletePrinterDevice(id)
+    
+    if (result.success) {
+      alert('打印机删除成功')
+      // 刷新打印机列表
+      await fetchPrinters()
+    } else {
+      alert(result.message || '删除打印机失败')
+    }
+  } catch (err) {
+    console.error('删除打印机失败:', err)
+    alert('网络请求失败，请检查网络连接')
+  }
 }
 
 // 新增打印机
@@ -195,6 +267,33 @@ const addPrinter = async () => {
     alert('网络请求失败，请检查网络连接')
   } finally {
     adding.value = false
+  }
+}
+
+// 编辑打印机
+const editPrinter = async () => {
+  if (!editForm.device.trim() || !editForm.url.trim()) {
+    alert('请填写完整信息')
+    return
+  }
+
+  editing.value = true
+  try {
+    const result = await updatePrinterDevice(editForm)
+    
+    if (result.success) {
+      alert('打印机修改成功')
+      showEditModalRef.value = false
+      // 刷新打印机列表
+      await fetchPrinters()
+    } else {
+      alert(result.message || '修改打印机失败')
+    }
+  } catch (err) {
+    console.error('修改打印机失败:', err)
+    alert('网络请求失败，请检查网络连接')
+  } finally {
+    editing.value = false
   }
 }
 
@@ -385,7 +484,24 @@ onMounted(() => {
 
 .printer-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.printer-actions .btn {
+  flex: 1;
+  min-width: 80px;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.btn-danger {
+  background: #ff4757;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #ff3742;
 }
 
 .btn {

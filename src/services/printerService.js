@@ -121,3 +121,74 @@ export async function addPrinterDevice(printer) {
     };
   }
 }
+
+/**
+ * 更新打印机设备
+ * @param {Object} printer - 打印机信息
+ * @param {number} printer.id - 打印机ID
+ * @param {string} printer.device - 打印机名称
+ * @param {string} printer.url - 打印机地址
+ * @returns {Promise} 操作结果
+ */
+export async function updatePrinterDevice(printer) {
+  try {
+    const formData = new FormData();
+    formData.append('id', printer.id);
+    formData.append('device', printer.device);
+    formData.append('url', printer.url);
+
+    const response = await requestWithForm('/v1/device/info/update', formData);
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '更新打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '更新打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('更新打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
+
+/**
+ * 删除打印机设备
+ * @param {number} id - 打印机ID
+ * @returns {Promise} 操作结果
+ */
+export async function deletePrinterDevice(id) {
+  try {
+    const formData = new FormData();
+    formData.append('id', id);
+
+    const response = await requestWithForm('/v1/device/info/delete', formData);
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '删除打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '删除打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('删除打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
