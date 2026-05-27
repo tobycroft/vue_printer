@@ -50,6 +50,10 @@
             <span class="label">更新时间:</span>
             <span class="value">{{ formatDate(printer.update_time) }}</span>
           </div>
+          <div v-if="printer.remark" class="info-item">
+            <span class="label">备注:</span>
+            <span class="value">{{ printer.remark }}</span>
+          </div>
         </div>
         <div class="printer-actions">
         <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
@@ -93,6 +97,16 @@
               class="form-control"
             />
           </div>
+          <div class="form-group">
+            <label for="device-remark">备注</label>
+            <input
+              id="device-remark"
+              v-model="addForm.remark"
+              type="text"
+              placeholder="可选，例如：办公室打印机"
+              class="form-control"
+            />
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="showAddModal = false">取消</button>
@@ -131,6 +145,16 @@
               class="form-control"
             />
           </div>
+          <div class="form-group">
+            <label for="edit-device-remark">备注</label>
+            <input
+              id="edit-device-remark"
+              v-model="editForm.remark"
+              type="text"
+              placeholder="可选，例如：办公室打印机"
+              class="form-control"
+            />
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="showEditModalRef.value = false">取消</button>
@@ -145,7 +169,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getPrinters, addPrinterDevice, updatePrinterDevice, deletePrinterDevice } from '@/services/printerService'
+import { getPrinters, getPrinterInfo, addPrinterDevice, updatePrinterDevice, deletePrinterDevice } from '@/services/printerService'
 
 const loading = ref(false)
 const error = ref(null)
@@ -167,7 +191,8 @@ const showEditModalRef = ref(false)
 const editForm = reactive({
   id: '',
   device: '',
-  url: ''
+  url: '',
+  remark: ''
 })
 const editing = ref(false)
 
@@ -205,9 +230,22 @@ const fetchPrinters = async () => {
 }
 
 // 查看打印机详情
-const viewPrinter = (printer) => {
-  console.log('查看打印机详情:', printer)
-  // 可以跳转到详情页面或弹出详情对话框
+const viewPrinter = async (printer) => {
+  loading.value = true
+  try {
+    const result = await getPrinterInfo(printer.id)
+    if (result.success) {
+      const detail = result.data
+      alert(`打印机详情:\n\n设备ID: ${detail.id}\n名称: ${detail.device}\n地址: ${detail.url}\n备注: ${detail.remark || '无'}\n创建时间: ${formatDate(detail.create_time)}\n更新时间: ${formatDate(detail.update_time)}`)
+    } else {
+      alert(`获取详情失败: ${result.message || '未知错误'}`)
+    }
+  } catch (err) {
+    console.error('获取打印机详情失败:', err)
+    alert('网络请求失败，请检查网络连接')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 显示编辑弹窗
@@ -215,6 +253,7 @@ const showEditModal = (printer) => {
   editForm.id = printer.id
   editForm.device = printer.device
   editForm.url = printer.url
+  editForm.remark = printer.remark || ''
   showEditModalRef.value = true
 }
 
