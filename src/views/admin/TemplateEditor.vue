@@ -200,20 +200,31 @@ const fetchPrinters = async () => {
   }
 }
 
-const loadLodopScript = (printerUrl) => {
-  return new Promise((resolve, reject) => {
+const loadLodopScript = async (printerUrl) => {
+  try {
+    const scriptUrl = `${printerUrl}/CLodopfuncs.js`
+    
+    const response = await fetch(scriptUrl)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const scriptContent = await response.text()
+    
     const existingScript = document.querySelector('script[data-lodop]')
     if (existingScript) {
       document.head.removeChild(existingScript)
     }
     
     const script = document.createElement('script')
-    script.src = `${printerUrl}/CLodopfuncs.js`
     script.setAttribute('data-lodop', 'true')
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('加载CLodop脚本失败'))
+    script.textContent = scriptContent
     document.head.appendChild(script)
-  })
+    
+  } catch (error) {
+    console.error('加载CLodop脚本失败:', error)
+    throw new Error('加载CLodop脚本失败')
+  }
 }
 
 const paperStyle = computed(() => {
