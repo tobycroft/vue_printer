@@ -5,6 +5,7 @@ import UserInfo from '../views/admin/UserInfo.vue'
 import About from '../views/admin/About.vue'
 import Help from '../views/admin/Help.vue'
 import Printers from '../views/admin/Printers.vue'
+import Templates from '../views/admin/Templates.vue'
 
 const routes = [
   {
@@ -26,6 +27,12 @@ const routes = [
         name: 'UserInfo',
         component: UserInfo,
         meta: { title: '用户信息' }
+      },
+      {
+        path: 'templates',
+        name: 'Templates',
+        component: Templates,
+        meta: { title: '打印模板管理' }
       },
       {
         path: 'about',

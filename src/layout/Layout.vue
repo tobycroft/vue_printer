@@ -43,6 +43,7 @@ const menus = ref([
   { path: '/admin/home', title: '首页', icon: '🏠' },
   { path: '/admin/userinfo', title: '用户信息', icon: '👤' },
   { path: '/admin/printers', title: '打印机管理', icon: '🖨️' },
+  { path: '/admin/templates', title: '打印模板管理', icon: '📄' },
   { path: '/admin/help', title: '帮助', icon: '❓' },
   { path: '/admin/about', title: '关于', icon: '️' }
 ])
