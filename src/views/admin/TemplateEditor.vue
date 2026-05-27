@@ -158,6 +158,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getPrinters } from '@/services/printerService'
+import { setLodopConfig, loadCLodop } from '@/middleware/LodopFuncs'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
@@ -217,8 +218,22 @@ const onPrinterChange = async () => {
   loadError.value = ''
   
   try {
-    await loadLodopScript(printerUrl)
-    scriptLoaded.value = true
+    setLodopConfig({ url: printerUrl })
+    
+    await new Promise((resolve, reject) => {
+      loadCLodop((err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+    
+    scriptLoaded.value = typeof window.getCLodop !== 'undefined'
+    if (!scriptLoaded.value) {
+      throw new Error('打印控件加载失败')
+    }
     loadError.value = ''
   } catch (error) {
     scriptLoaded.value = false
@@ -239,33 +254,6 @@ const fetchPrinters = async () => {
   } catch (error) {
     console.error('获取打印机列表失败:', error)
     alert('获取打印机列表失败')
-  }
-}
-
-const loadLodopScript = async (printerUrl) => {
-  try {
-    const scriptUrl = `${printerUrl}/CLodopfuncs.js`
-    
-    const response = await fetch(scriptUrl)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const scriptContent = await response.text()
-    
-    const existingScript = document.querySelector('script[data-lodop]')
-    if (existingScript) {
-      document.head.removeChild(existingScript)
-    }
-    
-    const script = document.createElement('script')
-    script.setAttribute('data-lodop', 'true')
-    script.textContent = scriptContent
-    document.head.appendChild(script)
-    
-  } catch (error) {
-    console.error('加载CLodop脚本失败:', error)
-    throw new Error('加载CLodop脚本失败')
   }
 }
 
