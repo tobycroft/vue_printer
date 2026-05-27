@@ -56,7 +56,6 @@
           </div>
         </div>
         <div class="printer-actions">
-        <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
         <button class="btn btn-secondary" @click="openEditModal(printer)">编辑</button>
         <button class="btn btn-danger" @click="deletePrinter(printer.id)">删除</button>
       </div>
@@ -118,11 +117,11 @@
     </div>
 
     <!-- 编辑打印机弹窗 -->
-    <div v-if="showEditModalRef.value" class="modal-overlay" @click.self="showEditModalRef.value = false">
+    <div v-if="showEditModalRef" class="modal-overlay" @click.self="showEditModalRef = false">
       <div class="modal-content">
         <div class="modal-header">
           <h3>编辑打印机</h3>
-          <button class="close-btn" @click="showEditModalRef.value = false">×</button>
+          <button class="close-btn" @click="showEditModalRef = false">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -157,7 +156,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showEditModalRef.value = false">取消</button>
+          <button class="btn btn-secondary" @click="showEditModalRef = false">取消</button>
           <button class="btn btn-primary" @click="editPrinter" :disabled="editing">
             {{ editing ? '保存中...' : '保存修改' }}
           </button>
