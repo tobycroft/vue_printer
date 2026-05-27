@@ -13,7 +13,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' http://localhost:* http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval'; object-src 'self'; script-src-elem 'self' http://localhost:* http://127.0.0.1:*"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "background": {
     "service_worker": "background.js",
@@ -31,6 +31,12 @@
       "matches": ["<all_urls>"],
       "js": ["content/content-script.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/lodop-handler.js"],
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "icons": {

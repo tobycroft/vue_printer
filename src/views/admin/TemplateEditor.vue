@@ -158,7 +158,6 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getPrinters } from '@/services/printerService'
-import { setLodopConfig, loadCLodop } from '@/middleware/LodopFuncs'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
@@ -200,6 +199,20 @@ const getPrinterUrl = (printer) => {
   return printer.url || printer.host || ''
 }
 
+const sendMessageToContentScript = (action, data) => {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, { action, ...data }, (response) => {
+          resolve(response || { success: false })
+        })
+      } else {
+        resolve({ success: false, error: '无法获取当前标签页' })
+      }
+    })
+  })
+}
+
 const onPrinterChange = async () => {
   if (!selectedPrinter.value) {
     scriptLoaded.value = false
@@ -218,19 +231,16 @@ const onPrinterChange = async () => {
   loadError.value = ''
   
   try {
-    setLodopConfig({ url: printerUrl })
+    await sendMessageToContentScript('setLodopConfig', { config: { url: printerUrl } })
     
-    await new Promise((resolve, reject) => {
-      loadCLodop((err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
+    const loadResult = await sendMessageToContentScript('loadCLodop', {})
+    if (!loadResult.success) {
+      throw new Error(loadResult.error || '加载失败')
+    }
     
-    scriptLoaded.value = typeof window.getCLodop !== 'undefined'
+    const statusResult = await sendMessageToContentScript('getLodopStatus', {})
+    scriptLoaded.value = statusResult.loaded
+    
     if (!scriptLoaded.value) {
       throw new Error('打印控件加载失败')
     }
@@ -399,7 +409,7 @@ const saveTemplate = async () => {
   }
 }
 
-const previewTemplate = () => {
+const previewTemplate = async () => {
   if (!selectedPrinter.value) {
     alert('请先选择打印机')
     return
@@ -410,32 +420,14 @@ const previewTemplate = () => {
     return
   }
   
-  if (typeof window.getLodop === 'undefined') {
-    alert('打印控件加载失败，请重新选择打印机')
-    return
-  }
-  
-  const LODOP = window.getLodop()
-  if (!LODOP) {
-    alert('获取打印控件失败')
-    return
-  }
-  
-  LODOP.PRINT_INIT(currentTemplate.name || '打印模板预览')
-  LODOP.SET_PRINT_PAGESIZE(0, currentTemplate.paperWidth, currentTemplate.paperHeight, '自定义纸张')
-  currentTemplate.controls.forEach((control) => {
-    if (control.type === 'text') {
-      LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '')
-      LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize)
-      LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0)
-      LODOP.SET_PRINT_STYLEA(0, 'Alignment', control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1))
-    } else if (control.type === 'rect') {
-      LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1)
-    } else if (control.type === 'line') {
-      LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1)
+  try {
+    const result = await sendMessageToContentScript('previewTemplate', { template: currentTemplate })
+    if (!result.success) {
+      alert(result.error || '打印预览失败')
     }
-  })
-  LODOP.PREVIEW()
+  } catch (error) {
+    alert('打印预览失败: ' + error.message)
+  }
 }
 
 onMounted(() => {

@@ -1,0 +1,204 @@
+(function() {
+    var LODOP_CONFIG = {
+        mainJS: "CLodopfuncs.js",
+        host: "localhost",
+        port1: 8000,
+        port2: 18000
+    };
+
+    function setLodopConfig(config) {
+        if (config) {
+            if (config.mainJS) LODOP_CONFIG.mainJS = config.mainJS;
+            if (config.port1) LODOP_CONFIG.port1 = config.port1;
+            if (config.port2) LODOP_CONFIG.port2 = config.port2;
+            if (config.url) {
+                var url = new URL(config.url);
+                LODOP_CONFIG.host = url.hostname;
+                LODOP_CONFIG.port1 = parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80);
+            }
+        }
+    }
+
+    function getUrls() {
+        var host = LODOP_CONFIG.host || 'localhost';
+        var port1 = LODOP_CONFIG.port1 || 8000;
+        var port2 = LODOP_CONFIG.port2 || 18000;
+        var mainJS = LODOP_CONFIG.mainJS || 'CLodopfuncs.js';
+        
+        return {
+            ws1: `ws://${host}:${port1}/${mainJS}`,
+            ws2: `ws://${host}:${port2}/${mainJS}`,
+            http1: `http://${host}:${port1}/${mainJS}`,
+            http2: `http://${host}:${port2}/${mainJS}`,
+            http3: `https://${host}:8443/${mainJS}`
+        };
+    }
+
+    function executeScript(scriptContent) {
+        var head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
+        var script = document.createElement("script");
+        script.setAttribute("type", "text/javascript");
+        script.textContent = scriptContent;
+        head.appendChild(script);
+        head.removeChild(script);
+    }
+
+    var CLodopIsLocal = false;
+    var LoadJsState = "None";
+
+    function needCLodop() {
+        var ua = navigator.userAgent;
+        return !((ua.indexOf("MSIE") >= 0) || (ua.indexOf("Trident") >= 0));
+    }
+
+    function loadCLodop(callback) {
+        if (!needCLodop()) {
+            if (callback) callback(null);
+            return;
+        }
+        var urls = getUrls();
+        CLodopIsLocal = !!((urls.ws1 + urls.ws2).match(/\/\/localho|\/\/127.0.0./i));
+        LoadJsState = "loadingA";
+        
+        var finish = function(err) {
+            setTimeout(function() {
+                if (callback) callback(err);
+            }, 300);
+        };
+
+        try {
+            var WSK1 = new WebSocket(urls.ws1);
+            WSK1.onopen = function(e) { 
+                setTimeout(checkOrTryHttp, 200); 
+                finish(null);
+            }
+            WSK1.onmessage = function(e) { if (!window.getCLodop) executeScript(e.data); }
+            WSK1.onerror = function(e) {
+                var WSK2 = new WebSocket(urls.ws2);
+                WSK2.onopen = function(e) {
+                    setTimeout(checkOrTryHttp, 200);
+                    finish(null);
+                }
+                WSK2.onmessage = function(e) { if (!window.getCLodop) executeScript(e.data); }
+                WSK2.onerror = function(e) {
+                    checkOrTryHttp();
+                    finish(null);
+                }
+            }
+        } catch(e) {
+            checkOrTryHttp();
+            finish(null);
+        }
+    }
+
+    function checkOrTryHttp() {
+        if (window.getCLodop) return;
+        var urls = getUrls();
+        var head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
+        var JS1 = document.createElement('script');
+        JS1.setAttribute('type', 'text/javascript');
+        JS1.onload = function() { LoadJsState = "completeA"; };
+        JS1.onerror = function() {
+            var JS2 = document.createElement('script');
+            JS2.setAttribute('type', 'text/javascript');
+            JS2.onload = function() { LoadJsState = "completeB"; };
+            JS2.onerror = function() { LoadJsState = "fail"; };
+            JS2.setAttribute('src', urls.http2);
+            head.insertBefore(JS2, head.firstChild);
+        };
+        JS1.setAttribute('src', urls.http1);
+        head.insertBefore(JS1, head.firstChild);
+    }
+
+    function getLodop(oOBJECT, oEMBED) {
+        var strFontTag = "<br><font color='#FF00FF'>打印控件";
+        var strLodopInstall = strFontTag + "未安装!点击这里<a href='install_lodop32.zip' target='_self'>执行安装</a>";
+        var strLodopUpdate = strFontTag + "需要升级!点击这里<a href='install_lodop32.zip' target='_self'>执行升级</a>";
+        var strLodop64Install = strFontTag + "(64位)未安装!点击这里<a href='install_lodop64.zip' target='_self'>执行安装</a>";
+        var strLodop64Update = strFontTag + "(64位)需要升级!点击这里<a href='install_lodop64.zip' target='_self'>执行升级</a>";
+        var strCopyRight = "版权所有(C) 2001-2024 广东洛图科技有限公司";
+        
+        var isIE = (navigator.userAgent.indexOf('MSIE') >= 0) || (navigator.userAgent.indexOf('Trident') >= 0);
+        
+        if (needCLodop()) {
+            var CLodop = window.getCLodop ? window.getCLodop() : null;
+            if (!CLodop) {
+                loadCLodop();
+                return null;
+            }
+            return CLodop;
+        }
+        
+        var LODOP;
+        try {
+            LODOP = isIE ? oOBJECT : oEMBED;
+            LODOP.Version("6.2.2.8");
+        } catch (err) {
+            alert("getLodop出错:" + err);
+        }
+        return LODOP;
+    }
+
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+        if (request.action === 'setLodopConfig') {
+            setLodopConfig(request.config);
+            sendResponse({ success: true });
+        } else if (request.action === 'loadCLodop') {
+            loadCLodop(function(err) {
+                sendResponse({ success: !err, error: err ? err.message : null });
+            });
+        } else if (request.action === 'getLodopStatus') {
+            sendResponse({ 
+                loaded: typeof window.getCLodop !== 'undefined',
+                state: LoadJsState
+            });
+        } else if (request.action === 'callLodop') {
+            try {
+                var LODOP = getLodop();
+                if (!LODOP) {
+                    sendResponse({ success: false, error: '打印控件未加载' });
+                    return;
+                }
+                
+                var result = LODOP[request.method].apply(LODOP, request.args);
+                sendResponse({ success: true, result: result });
+            } catch (err) {
+                sendResponse({ success: false, error: err.message });
+            }
+        } else if (request.action === 'previewTemplate') {
+            try {
+                var LODOP = getLodop();
+                if (!LODOP) {
+                    sendResponse({ success: false, error: '打印控件未加载' });
+                    return;
+                }
+                
+                var template = request.template;
+                LODOP.PRINT_INIT(template.name || '打印模板预览');
+                LODOP.SET_PRINT_PAGESIZE(0, template.paperWidth, template.paperHeight, '自定义纸张');
+                
+                if (template.controls) {
+                    template.controls.forEach(function(control) {
+                        if (control.type === 'text') {
+                            LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '');
+                            LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize);
+                            LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0);
+                            var align = control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1);
+                            LODOP.SET_PRINT_STYLEA(0, 'Alignment', align);
+                        } else if (control.type === 'rect') {
+                            LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1);
+                        } else if (control.type === 'line') {
+                            LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1);
+                        }
+                    });
+                }
+                
+                LODOP.PREVIEW();
+                sendResponse({ success: true });
+            } catch (err) {
+                sendResponse({ success: false, error: err.message });
+            }
+        }
+        return true;
+    });
+})();
