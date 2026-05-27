@@ -30,7 +30,7 @@
     <div v-else-if="printers.length > 0" class="printers-grid">
       <div v-for="printer in printers" :key="printer.id" class="printer-card">
         <div class="printer-header">
-          <div class="printer-name">{{ printer.device }}</div>
+          <div class="printer-name">{{ printer.device_name }}</div>
           <div class="printer-status online">在线</div>
         </div>
         <div class="printer-info">
@@ -250,7 +250,7 @@ const viewPrinter = async (printer) => {
 // 显示编辑弹窗
 const openEditModal = (printer) => {
   editForm.id = printer.id
-  editForm.device = printer.device
+  editForm.device = printer.device_name
   editForm.url = printer.url
   editForm.remark = printer.remark || ''
   showEditModalRef.value = true
