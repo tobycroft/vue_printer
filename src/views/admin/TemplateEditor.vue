@@ -45,6 +45,25 @@
         </div>
 
         <div class="section">
+          <h3>选择打印机</h3>
+          <div v-if="printersLoading" class="loading-text">加载中...</div>
+          <div v-else-if="printers.length === 0" class="no-printers-text">暂无打印机</div>
+          <select v-model="selectedPrinterId" class="form-control">
+            <option value="">请选择打印机</option>
+            <option v-for="printer in printers" :key="printer.id" :value="printer.id">
+              {{ printer.device_name }} ({{ printer.url }})
+            </option>
+          </select>
+          <div v-if="selectedPrinter" class="selected-printer-info">
+            <span>已选: {{ selectedPrinter.device_name }}</span>
+            <span class="printer-url">{{ getPrinterUrl(selectedPrinter) }}/CLodopfuncs.js</span>
+          </div>
+          <button v-if="printers.length > 0" class="btn btn-secondary btn-sm full-width mt-2" @click="fetchPrinters">
+            刷新打印机列表
+          </button>
+        </div>
+
+        <div class="section">
           <h3>控件列表</h3>
           <div class="widget-list">
             <div 
@@ -131,9 +150,13 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
+import { getPrinters } from '@/services/printerService'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
+const printers = ref([])
+const printersLoading = ref(false)
+const selectedPrinterId = ref('')
 
 const currentTemplate = reactive({
   id: '',
@@ -155,6 +178,10 @@ const availableWidgets = [
   { type: 'barcode', name: '条形码', icon: '🔤' },
   { type: 'qrcode', name: '二维码', icon: '🟆' }
 ]
+
+const selectedPrinter = computed(() => {
+  return printers.value.find(p => p.id === selectedPrinterId.value)
+})
 
 const paperStyle = computed(() => {
   const scale = Math.min(
@@ -183,6 +210,15 @@ const getControlStyle = (control) => {
   }
 }
 
+const getPrinterUrl = (printer) => {
+  if (!printer || !printer.url) return ''
+  let url = printer.url.trim()
+  if (url.endsWith('/')) {
+    url = url.slice(0, -1)
+  }
+  return url
+}
+
 const goBack = () => {
   window.history.back()
 }
@@ -199,6 +235,39 @@ const applyPaperPreset = () => {
     currentTemplate.paperWidth = presets[paperPreset.value].width
     currentTemplate.paperHeight = presets[paperPreset.value].height
   }
+}
+
+const fetchPrinters = async () => {
+  printersLoading.value = true
+  try {
+    const result = await getPrinters()
+    if (result.success) {
+      printers.value = result.data
+    } else {
+      alert(result.message || '获取打印机列表失败')
+    }
+  } catch (error) {
+    console.error('获取打印机列表失败:', error)
+    alert('获取打印机列表失败')
+  } finally {
+    printersLoading.value = false
+  }
+}
+
+const loadLodopScript = (printerUrl) => {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector('script[data-lodop]')
+    if (existingScript) {
+      document.head.removeChild(existingScript)
+    }
+    
+    const script = document.createElement('script')
+    script.src = `${printerUrl}/CLodopfuncs.js`
+    script.setAttribute('data-lodop', 'true')
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('加载CLodop脚本失败'))
+    document.head.appendChild(script)
+  })
 }
 
 const onDragStart = (event, widget) => {
@@ -298,16 +367,32 @@ const saveTemplate = async () => {
   }
 }
 
-const previewTemplate = () => {
-  if (typeof window.getLodop === 'undefined') {
-    alert('请先安装Lodop打印控件')
+const previewTemplate = async () => {
+  if (!selectedPrinter.value) {
+    alert('请先选择打印机')
     return
   }
+  
+  const printerUrl = getPrinterUrl(selectedPrinter.value)
+  
+  try {
+    await loadLodopScript(printerUrl)
+  } catch (error) {
+    alert('加载打印控件失败，请检查打印机连接')
+    return
+  }
+  
+  if (typeof window.getLodop === 'undefined') {
+    alert('打印控件加载失败，请检查打印机连接')
+    return
+  }
+  
   const LODOP = window.getLodop()
   if (!LODOP) {
     alert('获取打印控件失败')
     return
   }
+  
   LODOP.PRINT_INIT(currentTemplate.name || '打印模板预览')
   LODOP.SET_PRINT_PAGESIZE(0, currentTemplate.paperWidth, currentTemplate.paperHeight, '自定义纸张')
   currentTemplate.controls.forEach((control) => {
@@ -326,6 +411,8 @@ const previewTemplate = () => {
 }
 
 onMounted(() => {
+  fetchPrinters()
+  
   const params = new URLSearchParams(window.location.search)
   const templateId = params.get('id')
   if (templateId) {
@@ -427,6 +514,10 @@ onMounted(() => {
   width: 100%;
 }
 
+.mt-2 {
+  margin-top: 8px;
+}
+
 .editor-main {
   display: flex;
   flex: 1;
@@ -452,6 +543,29 @@ onMounted(() => {
   color: #ffffff;
   padding-bottom: 8px;
   border-bottom: 1px solid #3d3d3d;
+}
+
+.loading-text, .no-printers-text {
+  color: #999;
+  font-size: 13px;
+  padding: 8px;
+}
+
+.selected-printer-info {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #e0e0e0;
+}
+
+.selected-printer-info .printer-url {
+  display: block;
+  margin-top: 4px;
+  color: #00d8ff;
+  font-size: 11px;
+  word-break: break-all;
 }
 
 .form-group, .property-group {
