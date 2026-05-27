@@ -93,6 +93,15 @@ function checkOrTryHttp() {
     head.insertBefore(JS1,head.firstChild);
 }
 
+function executeScript(scriptContent) {
+    var head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
+    var script = document.createElement("script");
+    script.setAttribute("type", "text/javascript");
+    script.textContent = scriptContent;
+    head.appendChild(script);
+    head.removeChild(script);
+}
+
 function loadCLodop(callback) {
     if (!needCLodop()) {
         if (callback) callback(null);
@@ -112,17 +121,17 @@ function loadCLodop(callback) {
     try {
         var WSK1=new WebSocket(urls.ws1);
         WSK1.onopen = function(e) { 
-            setTimeout("checkOrTryHttp()", 200); 
+            setTimeout(checkOrTryHttp, 200); 
             finish(null);
         }
-        WSK1.onmessage = function(e) {if (!window.getCLodop) eval(e.data);}
+        WSK1.onmessage = function(e) {if (!window.getCLodop) executeScript(e.data);}
         WSK1.onerror = function(e) {
              var WSK2=new WebSocket(urls.ws2);
              WSK2.onopen = function(e) {
-                 setTimeout("checkOrTryHttp()", 200);
+                 setTimeout(checkOrTryHttp, 200);
                  finish(null);
              }
-             WSK2.onmessage = function(e) {if (!window.getCLodop) eval(e.data);}
+             WSK2.onmessage = function(e) {if (!window.getCLodop) executeScript(e.data);}
              WSK2.onerror= function(e) {
                  checkOrTryHttp();
                  finish(null);
@@ -231,4 +240,4 @@ function getLodop(oOBJECT, oEMBED) {
     }
 }
 
-export { setLodopConfig, loadCLodop, getLodop, getUrls };
+export { setLodopConfig, loadCLodop, getLodop, getUrls, executeScript };
