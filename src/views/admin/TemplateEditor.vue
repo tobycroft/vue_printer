@@ -45,6 +45,23 @@
         </div>
 
         <div class="section">
+          <h3>选择打印机</h3>
+          <div class="form-group">
+            <button class="btn btn-secondary btn-sm full-width mb-2" @click="fetchPrinters">刷新列表</button>
+            <select v-model="selectedPrinterId" class="form-control">
+              <option value="">请选择打印机</option>
+              <option v-for="printer in printers" :key="printer.id" :value="printer.id">
+                {{ printer.device_name }} ({{ printer.url }})
+              </option>
+            </select>
+          </div>
+          <div v-if="selectedPrinter" class="printer-info">
+            <p>已选打印机: {{ selectedPrinter.device_name }}</p>
+            <p>CLodop地址: <code>{{ getPrinterUrl(selectedPrinter) }}/CLodopfuncs.js</code></p>
+          </div>
+        </div>
+
+        <div class="section">
           <h3>控件列表</h3>
           <div class="widget-list">
             <div
@@ -131,6 +148,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
+import { getPrinters } from '@/services/printerService'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
@@ -148,6 +166,9 @@ const draggedWidget = ref(null)
 const draggingControl = ref(null)
 const dragOffset = reactive({ x: 0, y: 0 })
 
+const printers = ref([])
+const selectedPrinterId = ref('')
+
 const availableWidgets = [
   { type: 'text', name: '文本框', icon: '📝' },
   { type: 'rect', name: '矩形框', icon: '⬜' },
@@ -155,6 +176,45 @@ const availableWidgets = [
   { type: 'barcode', name: '条形码', icon: '🔤' },
   { type: 'qrcode', name: '二维码', icon: '🟆' }
 ]
+
+const selectedPrinter = computed(() => {
+  return printers.value.find(p => p.id === selectedPrinterId.value)
+})
+
+const getPrinterUrl = (printer) => {
+  if (!printer) return ''
+  return printer.url || printer.host || ''
+}
+
+const fetchPrinters = async () => {
+  try {
+    const result = await getPrinters()
+    if (result.success) {
+      printers.value = result.data
+    } else {
+      alert(result.message || '获取打印机列表失败')
+    }
+  } catch (error) {
+    console.error('获取打印机列表失败:', error)
+    alert('获取打印机列表失败')
+  }
+}
+
+const loadLodopScript = (printerUrl) => {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector('script[data-lodop]')
+    if (existingScript) {
+      document.head.removeChild(existingScript)
+    }
+    
+    const script = document.createElement('script')
+    script.src = `${printerUrl}/CLodopfuncs.js`
+    script.setAttribute('data-lodop', 'true')
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('加载CLodop脚本失败'))
+    document.head.appendChild(script)
+  })
+}
 
 const paperStyle = computed(() => {
   const scale = Math.min(
@@ -342,6 +402,8 @@ const previewTemplate = async () => {
 }
 
 onMounted(() => {
+  fetchPrinters()
+  
   const params = new URLSearchParams(window.location.search)
   const templateId = params.get('id')
   if (templateId) {
@@ -535,6 +597,34 @@ onMounted(() => {
 
 .widget-icon {
   font-size: 16px;
+}
+
+.printer-info {
+  margin-top: 12px;
+  padding: 10px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.printer-info p {
+  margin: 4px 0;
+  color: #999;
+}
+
+.printer-info code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px;
+  background: #0d0d0d;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #00d8ff;
+  word-break: break-all;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
 }
 
 .widget-name {
