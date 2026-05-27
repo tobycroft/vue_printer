@@ -14,143 +14,63 @@
 </head>
 <body>
     <div id="status" class="loading">加载打印控件...</div>
-    <button id="previewBtn" style="display: none;" onclick="preview()">开始预览</button>
+    <button id="previewBtn" style="display: none;">开始预览</button>
 
     <script>
-        var LODOP_CONFIG = {
-            mainJS: "CLodopfuncs.js",
-            host: "localhost",
-            port1: 8000
-        };
-
+        var LODOP;
         var printTemplate = null;
+        var printerUrl = 'http://localhost:8000';
 
-        function setLodopConfig(config) {
-            if (config) {
-                if (config.mainJS) LODOP_CONFIG.mainJS = config.mainJS;
-                if (config.port1) LODOP_CONFIG.port1 = config.port1;
-                if (config.port2) LODOP_CONFIG.port2 = config.port2;
-                if (config.url) {
-                    var url = new URL(config.url);
-                    LODOP_CONFIG.host = url.hostname;
-                    LODOP_CONFIG.port1 = parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80);
-                }
-            }
-        }
-
-        function getUrls() {
-            var host = LODOP_CONFIG.host || 'localhost';
-            var port1 = LODOP_CONFIG.port1 || 8000;
-            var mainJS = LODOP_CONFIG.mainJS || 'CLodopfuncs.js';
-            
-            return {
-                http1: `http://${host}:${port1}/${mainJS}`
-            };
-        }
-
-        var CLodopIsLocal = false;
-        var LoadJsState = "None";
-
-        function needCLodop() {
-            var ua = navigator.userAgent;
-            return !((ua.indexOf("MSIE") >= 0) || (ua.indexOf("Trident") >= 0));
-        }
-
-        function loadCLodop(callback) {
-            if (!needCLodop()) {
-                if (callback) callback(null);
-                return;
-            }
-            var urls = getUrls();
-            CLodopIsLocal = true;
-            LoadJsState = "loadingA";
-            
-            var finish = function(err) {
-                setTimeout(function() {
-                    if (callback) callback(err);
-                }, 300);
-            };
-
-            checkOrTryHttp();
-            finish(null);
-        }
-
-        function checkOrTryHttp() {
-            if (window.getCLodop) return;
-            var urls = getUrls();
-            var head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
-            var JS1 = document.createElement('script');
-            JS1.setAttribute('type', 'text/javascript');
-            JS1.onload = function() { LoadJsState = "completeA"; };
-            JS1.onerror = function() { LoadJsState = "fail"; };
-            JS1.setAttribute('src', urls.http1);
-            head.insertBefore(JS1, head.firstChild);
-        }
-
-        function getLodop(oOBJECT, oEMBED) {
-            var strFontTag = "<br><font color='#FF00FF'>打印控件";
-            var strLodopInstall = strFontTag + "未安装!点击这里<a href='install_lodop32.zip' target='_self'>执行安装</a>";
-            var strLodopUpdate = strFontTag + "需要升级!点击这里<a href='install_lodop32.zip' target='_self'>执行升级</a>";
-            var strLodop64Install = strFontTag + "(64位)未安装!点击这里<a href='install_lodop64.zip' target='_self'>执行安装</a>";
-            var strLodop64Update = strFontTag + "(64位)需要升级!点击这里<a href='install_lodop64.zip' target='_self'>执行升级</a>";
-            var strCopyRight = "版权所有(C) 2001-2024 广东洛图科技有限公司";
-            
-            var isIE = (navigator.userAgent.indexOf('MSIE') >= 0) || (navigator.userAgent.indexOf('Trident') >= 0);
-            
-            if (needCLodop()) {
-                var CLodop = window.getCLodop ? window.getCLodop() : null;
-                if (!CLodop) {
-                    loadCLodop();
-                    return null;
-                }
-                return CLodop;
-            }
-            
-            var LODOP;
-            try {
-                LODOP = isIE ? oOBJECT : oEMBED;
-                LODOP.Version("6.2.2.8");
-            } catch (err) {
-                alert("getLodop出错:" + err);
-            }
-            return LODOP;
+        function loadCLodopScript(url) {
+            return new Promise((resolve, reject) => {
+                var script = document.createElement('script');
+                script.src = url + '/CLodopfuncs.js';
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('加载CLodop脚本失败'));
+                document.head.appendChild(script);
+            });
         }
 
         function preview() {
-            var LODOP = getLodop();
-            if (!LODOP) {
-                alert('打印控件未加载');
-                return;
+            try {
+                LODOP = getLodop();
+                if (!LODOP) {
+                    alert('打印控件未加载，请确保C-LODOP服务已启动');
+                    return;
+                }
+                
+                if (!printTemplate) {
+                    alert('没有打印数据');
+                    return;
+                }
+                
+                LODOP.PRINT_INIT(printTemplate.name || '打印模板预览');
+                LODOP.SET_PRINT_PAGESIZE(0, printTemplate.paperWidth, printTemplate.paperHeight, '自定义纸张');
+                
+                if (printTemplate.controls) {
+                    printTemplate.controls.forEach(function(control) {
+                        if (control.type === 'text') {
+                            LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '');
+                            LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize);
+                            LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0);
+                            var align = control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1);
+                            LODOP.SET_PRINT_STYLEA(0, 'Alignment', align);
+                        } else if (control.type === 'rect') {
+                            LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1);
+                        } else if (control.type === 'line') {
+                            LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1);
+                        }
+                    });
+                }
+                
+                LODOP.PREVIEW();
+            } catch(e) {
+                console.error('预览出错:', e);
+                alert('预览出错: ' + e.message);
             }
-            
-            if (!printTemplate) {
-                alert('没有打印数据');
-                return;
-            }
-            
-            LODOP.PRINT_INIT(printTemplate.name || '打印模板预览');
-            LODOP.SET_PRINT_PAGESIZE(0, printTemplate.paperWidth, printTemplate.paperHeight, '自定义纸张');
-            
-            if (printTemplate.controls) {
-                printTemplate.controls.forEach(function(control) {
-                    if (control.type === 'text') {
-                        LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '');
-                        LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize);
-                        LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0);
-                        var align = control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1);
-                        LODOP.SET_PRINT_STYLEA(0, 'Alignment', align);
-                    } else if (control.type === 'rect') {
-                        LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1);
-                    } else if (control.type === 'line') {
-                        LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1);
-                    }
-                });
-            }
-            
-            LODOP.PREVIEW();
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             var params = new URLSearchParams(window.location.search);
             var configStr = params.get('config');
             var templateStr = params.get('template');
@@ -158,7 +78,9 @@
             if (configStr) {
                 try {
                     var config = JSON.parse(decodeURIComponent(configStr));
-                    setLodopConfig(config);
+                    if (config.url) {
+                        printerUrl = config.url;
+                    }
                 } catch(e) {
                     console.error('解析配置失败:', e);
                 }
@@ -172,23 +94,39 @@
                 }
             }
             
-            loadCLodop(function(err) {
-                var statusDiv = document.getElementById('status');
-                var previewBtn = document.getElementById('previewBtn');
+            var statusDiv = document.getElementById('status');
+            var previewBtn = document.getElementById('previewBtn');
+            
+            try {
+                await loadCLodopScript(printerUrl);
                 
-                if (err || typeof window.getCLodop === 'undefined') {
-                    statusDiv.className = 'error';
-                    statusDiv.textContent = '打印控件加载失败，请确保C-LODOP服务已启动';
-                } else {
-                    statusDiv.className = 'success';
-                    statusDiv.textContent = '打印控件加载成功';
-                    previewBtn.style.display = 'block';
-                    
-                    if (printTemplate) {
-                        preview();
+                var checkLoaded = setInterval(function() {
+                    if (typeof window.getCLodop !== 'undefined') {
+                        clearInterval(checkLoaded);
+                        
+                        statusDiv.className = 'success';
+                        statusDiv.textContent = '打印控件加载成功';
+                        previewBtn.style.display = 'block';
+                        previewBtn.onclick = preview;
+                        
+                        if (printTemplate) {
+                            preview();
+                        }
                     }
-                }
-            });
+                }, 200);
+                
+                setTimeout(function() {
+                    clearInterval(checkLoaded);
+                    if (typeof window.getCLodop === 'undefined') {
+                        statusDiv.className = 'error';
+                        statusDiv.textContent = '打印控件加载失败，请确保C-LODOP服务已启动';
+                    }
+                }, 10000);
+                
+            } catch(e) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '加载CLodop脚本失败: ' + e.message;
+            }
         });
     </script>
 </body>
