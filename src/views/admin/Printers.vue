@@ -31,7 +31,18 @@
       <div v-for="printer in printers" :key="printer.id" class="printer-card">
         <div class="printer-header">
           <div class="printer-name">{{ printer.device_name }}</div>
-          <div class="printer-status online">在线</div>
+          <div 
+            v-if="printer.status === 'testing'" 
+            class="printer-status testing"
+          >测试中</div>
+          <div 
+            v-else-if="printer.status === 'online'" 
+            class="printer-status online"
+          >在线</div>
+          <div 
+            v-else 
+            class="printer-status offline"
+          >离线</div>
         </div>
         <div class="printer-info">
           <div class="info-item">
@@ -206,6 +217,31 @@ const formatDate = (dateStr) => {
   }
 }
 
+// 测试打印机连接
+const testPrinterConnection = async (url) => {
+  return new Promise((resolve) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      controller.abort()
+      resolve(false)
+    }, 6000)
+
+    fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      mode: 'no-cors'
+    })
+      .then(() => {
+        clearTimeout(timeoutId)
+        resolve(true)
+      })
+      .catch(() => {
+        clearTimeout(timeoutId)
+        resolve(false)
+      })
+  })
+}
+
 // 获取打印机列表
 const fetchPrinters = async () => {
   loading.value = true
@@ -216,7 +252,17 @@ const fetchPrinters = async () => {
     const result = await getPrinters()
     
     if (result.success) {
-      printers.value = result.data
+      // 为每个打印机添加状态字段，初始为测试中
+      printers.value = result.data.map(printer => ({
+        ...printer,
+        status: 'testing'
+      }))
+
+      // 异步测试每个打印机的连接状态
+      printers.value.forEach(async (printer, index) => {
+        const isOnline = await testPrinterConnection(printer.url)
+        printers.value[index].status = isOnline ? 'online' : 'offline'
+      })
     } else {
       error.value = result.message || '获取打印机列表失败'
     }
@@ -520,9 +566,29 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.printer-status.testing {
+  background: #ffa502;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
 .printer-status.online {
   background: #2ed573;
   color: white;
+}
+
+.printer-status.offline {
+  background: #ff4757;
+  color: white;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .printer-info {
