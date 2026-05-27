@@ -20,8 +20,7 @@
         var LODOP_CONFIG = {
             mainJS: "CLodopfuncs.js",
             host: "localhost",
-            port1: 8000,
-            port2: 18000
+            port1: 8000
         };
 
         var printTemplate = null;
@@ -42,15 +41,10 @@
         function getUrls() {
             var host = LODOP_CONFIG.host || 'localhost';
             var port1 = LODOP_CONFIG.port1 || 8000;
-            var port2 = LODOP_CONFIG.port2 || 18000;
             var mainJS = LODOP_CONFIG.mainJS || 'CLodopfuncs.js';
             
             return {
-                ws1: `ws://${host}:${port1}/${mainJS}`,
-                ws2: `ws://${host}:${port2}/${mainJS}`,
-                http1: `http://${host}:${port1}/${mainJS}`,
-                http2: `http://${host}:${port2}/${mainJS}`,
-                http3: `https://${host}:8443/${mainJS}`
+                http1: `http://${host}:${port1}/${mainJS}`
             };
         }
 
@@ -68,7 +62,7 @@
                 return;
             }
             var urls = getUrls();
-            CLodopIsLocal = !!((urls.ws1 + urls.ws2).match(/\/\/localho|\/\/127.0.0./i));
+            CLodopIsLocal = true;
             LoadJsState = "loadingA";
             
             var finish = function(err) {
@@ -77,29 +71,8 @@
                 }, 300);
             };
 
-            try {
-                var WSK1 = new WebSocket(urls.ws1);
-                WSK1.onopen = function(e) { 
-                    setTimeout(checkOrTryHttp, 200); 
-                    finish(null);
-                }
-                WSK1.onmessage = function(e) { if (!window.getCLodop) eval(e.data); }
-                WSK1.onerror = function(e) {
-                    var WSK2 = new WebSocket(urls.ws2);
-                    WSK2.onopen = function(e) {
-                        setTimeout(checkOrTryHttp, 200);
-                        finish(null);
-                    }
-                    WSK2.onmessage = function(e) { if (!window.getCLodop) eval(e.data); }
-                    WSK2.onerror = function(e) {
-                        checkOrTryHttp();
-                        finish(null);
-                    }
-                }
-            } catch(e) {
-                checkOrTryHttp();
-                finish(null);
-            }
+            checkOrTryHttp();
+            finish(null);
         }
 
         function checkOrTryHttp() {
@@ -109,14 +82,7 @@
             var JS1 = document.createElement('script');
             JS1.setAttribute('type', 'text/javascript');
             JS1.onload = function() { LoadJsState = "completeA"; };
-            JS1.onerror = function() {
-                var JS2 = document.createElement('script');
-                JS2.setAttribute('type', 'text/javascript');
-                JS2.onload = function() { LoadJsState = "completeB"; };
-                JS2.onerror = function() { LoadJsState = "fail"; };
-                JS2.setAttribute('src', urls.http2);
-                head.insertBefore(JS2, head.firstChild);
-            };
+            JS1.onerror = function() { LoadJsState = "fail"; };
             JS1.setAttribute('src', urls.http1);
             head.insertBefore(JS1, head.firstChild);
         }

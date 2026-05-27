@@ -199,16 +199,9 @@ const getPrinterUrl = (printer) => {
   return printer.url || printer.host || ''
 }
 
-const loadLodopScript = async (printerUrl) => {
-  try {
+const loadLodopScript = (printerUrl) => {
+  return new Promise((resolve, reject) => {
     const scriptUrl = `${printerUrl}/CLodopfuncs.js`
-    
-    const response = await fetch(scriptUrl)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const scriptContent = await response.text()
     
     const existingScript = document.querySelector('script[data-lodop]')
     if (existingScript) {
@@ -217,13 +210,15 @@ const loadLodopScript = async (printerUrl) => {
     
     const script = document.createElement('script')
     script.setAttribute('data-lodop', 'true')
-    script.textContent = scriptContent
+    script.setAttribute('src', scriptUrl)
+    script.onload = () => {
+      resolve()
+    }
+    script.onerror = () => {
+      reject(new Error('加载CLodop脚本失败'))
+    }
     document.head.appendChild(script)
-    
-  } catch (error) {
-    console.error('加载CLodop脚本失败:', error)
-    throw new Error('加载CLodop脚本失败')
-  }
+  })
 }
 
 const onPrinterChange = async () => {
