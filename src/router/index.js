@@ -6,6 +6,7 @@ import About from '../views/admin/About.vue'
 import Help from '../views/admin/Help.vue'
 import Printers from '../views/admin/Printers.vue'
 import Templates from '../views/admin/Templates.vue'
+import TemplateEditor from '../views/admin/TemplateEditor.vue'
 
 const routes = [
   {
@@ -53,6 +54,12 @@ const routes = [
         meta: { title: '打印机管理' }
       }
     ]
+  },
+  {
+    path: '/template-editor',
+    name: 'TemplateEditor',
+    component: TemplateEditor,
+    meta: { title: '模板编辑器' }
   },
   {
     path: '/:pathMatch(.*)*',
