@@ -13,7 +13,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' http://127.0.0.1:8000 'unsafe-inline' 'unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self' http://localhost:* http://127.0.0.1:* 'unsafe-inline' 'unsafe-eval'; object-src 'self'; script-src-elem 'self' http://localhost:* http://127.0.0.1:*"
   },
   "background": {
     "service_worker": "background.js",
