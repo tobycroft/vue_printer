@@ -13,8 +13,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'",
-    "sandbox": "allow-scripts allow-same-origin"
+    "extension_pages": "script-src 'self' 'unsafe-inline'; object-src 'self'"
   },
   "background": {
     "service_worker": "background.js",

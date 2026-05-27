@@ -1,13 +1,5 @@
 <template>
   <div class="template-editor-container">
-    <iframe 
-      ref="printIframe" 
-      id="print-iframe"
-      :src="sandboxUrl" 
-      style="display: none;"
-      @load="onIframeLoad"
-    ></iframe>
-    
     <header class="editor-header">
       <div class="header-left">
         <button class="btn btn-secondary back-btn" @click="goBack">
@@ -163,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getPrinters } from '@/services/printerService'
 
@@ -202,43 +194,36 @@ const scriptLoaded = ref(false)
 const scriptLoading = ref(false)
 const loadError = ref('')
 
-const printIframe = ref(null)
-const sandboxUrl = computed(() => {
-  return chrome.runtime.getURL('sandbox-print.html')
-})
-
 const getPrinterUrl = (printer) => {
   if (!printer) return ''
   return printer.url || printer.host || ''
 }
 
-const sendMessageToIframe = (action, data) => {
-  return new Promise((resolve) => {
-    if (!printIframe.value) {
-      resolve({ success: false, error: 'iframe 未加载' })
-      return
+const loadLodopScript = async (printerUrl) => {
+  try {
+    const scriptUrl = `${printerUrl}/CLodopfuncs.js`
+    
+    const response = await fetch(scriptUrl)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
     
-    const iframeWindow = printIframe.value.contentWindow
-    if (!iframeWindow) {
-      resolve({ success: false, error: 'iframe window 不可访问' })
-      return
+    const scriptContent = await response.text()
+    
+    const existingScript = document.querySelector('script[data-lodop]')
+    if (existingScript) {
+      document.head.removeChild(existingScript)
     }
     
-    const messageHandler = (event) => {
-      if (event.source === iframeWindow) {
-        window.removeEventListener('message', messageHandler)
-        resolve(event.data)
-      }
-    }
+    const script = document.createElement('script')
+    script.setAttribute('data-lodop', 'true')
+    script.textContent = scriptContent
+    document.head.appendChild(script)
     
-    window.addEventListener('message', messageHandler)
-    iframeWindow.postMessage({ action, ...data }, '*')
-  })
-}
-
-const onIframeLoad = () => {
-  console.log('Print iframe loaded')
+  } catch (error) {
+    console.error('加载CLodop脚本失败:', error)
+    throw new Error('加载CLodop脚本失败')
+  }
 }
 
 const onPrinterChange = async () => {
@@ -259,11 +244,11 @@ const onPrinterChange = async () => {
   loadError.value = ''
   
   try {
-    const result = await sendMessageToIframe('setConfig', { config: { url: printerUrl } })
-    scriptLoaded.value = result.success
+    await loadLodopScript(printerUrl)
     
+    scriptLoaded.value = typeof window.getCLodop !== 'undefined'
     if (!scriptLoaded.value) {
-      throw new Error(result.error || '打印控件加载失败')
+      throw new Error('打印控件加载失败')
     }
     loadError.value = ''
   } catch (error) {
@@ -430,7 +415,7 @@ const saveTemplate = async () => {
   }
 }
 
-const previewTemplate = async () => {
+const previewTemplate = () => {
   if (!selectedPrinter.value) {
     alert('请先选择打印机')
     return
@@ -441,14 +426,32 @@ const previewTemplate = async () => {
     return
   }
   
-  try {
-    const result = await sendMessageToIframe('preview', { template: JSON.parse(JSON.stringify(currentTemplate)) })
-    if (!result.success) {
-      alert(result.error || '打印预览失败')
-    }
-  } catch (error) {
-    alert('打印预览失败: ' + error.message)
+  if (typeof window.getCLodop === 'undefined') {
+    alert('打印控件加载失败，请重新选择打印机')
+    return
   }
+  
+  const LODOP = window.getCLodop()
+  if (!LODOP) {
+    alert('获取打印控件失败')
+    return
+  }
+  
+  LODOP.PRINT_INIT(currentTemplate.name || '打印模板预览')
+  LODOP.SET_PRINT_PAGESIZE(0, currentTemplate.paperWidth, currentTemplate.paperHeight, '自定义纸张')
+  currentTemplate.controls.forEach((control) => {
+    if (control.type === 'text') {
+      LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '')
+      LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize)
+      LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0)
+      LODOP.SET_PRINT_STYLEA(0, 'Alignment', control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1))
+    } else if (control.type === 'rect') {
+      LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1)
+    } else if (control.type === 'line') {
+      LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1)
+    }
+  })
+  LODOP.PREVIEW()
 }
 
 onMounted(() => {
