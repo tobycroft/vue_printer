@@ -57,7 +57,7 @@
         </div>
         <div class="printer-actions">
         <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
-        <button class="btn btn-secondary" @click="showEditModal(printer)">编辑</button>
+        <button class="btn btn-secondary" @click="openEditModal(printer)">编辑</button>
         <button class="btn btn-danger" @click="deletePrinter(printer.id)">删除</button>
       </div>
       </div>
@@ -249,7 +249,7 @@ const viewPrinter = async (printer) => {
 }
 
 // 显示编辑弹窗
-const showEditModal = (printer) => {
+const openEditModal = (printer) => {
   editForm.id = printer.id
   editForm.device = printer.device
   editForm.url = printer.url
