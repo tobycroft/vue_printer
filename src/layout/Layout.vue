@@ -43,9 +43,6 @@ const menus = ref([
   { path: '/admin/home', title: '首页', icon: '🏠' },
   { path: '/admin/userinfo', title: '用户信息', icon: '👤' },
   { path: '/admin/printers', title: '打印机管理', icon: '🖨️' },
-  { path: '/admin/templates', title: '模板管理', icon: '📄' },
-  { path: '/admin/settings', title: '打印设置', icon: '⚙️' },
-  { path: '/admin/connection', title: 'C-LODOP 连接', icon: '' },
   { path: '/admin/help', title: '帮助', icon: '❓' },
   { path: '/admin/about', title: '关于', icon: '️' }
 ])
