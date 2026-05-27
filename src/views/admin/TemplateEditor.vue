@@ -48,7 +48,7 @@
           <h3>选择打印机</h3>
           <div class="form-group">
             <button class="btn btn-secondary btn-sm full-width mb-2" @click="fetchPrinters">刷新列表</button>
-            <select v-model="selectedPrinterId" class="form-control">
+            <select v-model="selectedPrinterId" @change="onPrinterChange" class="form-control">
               <option value="">请选择打印机</option>
               <option v-for="printer in printers" :key="printer.id" :value="printer.id">
                 {{ printer.device_name }} ({{ printer.url }})
@@ -58,6 +58,15 @@
           <div v-if="selectedPrinter" class="printer-info">
             <p>已选打印机: {{ selectedPrinter.device_name }}</p>
             <p>CLodop地址: <code>{{ getPrinterUrl(selectedPrinter) }}/CLodopfuncs.js</code></p>
+            <div v-if="scriptLoading" class="loading-status loading">
+              <span class="spinner"></span> 正在加载打印控件...
+            </div>
+            <div v-else-if="scriptLoaded" class="loading-status success">
+              ✓ 打印控件加载成功
+            </div>
+            <div v-else-if="loadError" class="loading-status error">
+              ✗ {{ loadError }}
+            </div>
           </div>
         </div>
 
@@ -181,9 +190,42 @@ const selectedPrinter = computed(() => {
   return printers.value.find(p => p.id === selectedPrinterId.value)
 })
 
+const scriptLoaded = ref(false)
+const scriptLoading = ref(false)
+const loadError = ref('')
+
 const getPrinterUrl = (printer) => {
   if (!printer) return ''
   return printer.url || printer.host || ''
+}
+
+const onPrinterChange = async () => {
+  if (!selectedPrinter.value) {
+    scriptLoaded.value = false
+    loadError.value = ''
+    return
+  }
+  
+  const printerUrl = getPrinterUrl(selectedPrinter.value)
+  if (!printerUrl) {
+    scriptLoaded.value = false
+    loadError.value = ''
+    return
+  }
+  
+  scriptLoading.value = true
+  loadError.value = ''
+  
+  try {
+    await loadLodopScript(printerUrl)
+    scriptLoaded.value = true
+    loadError.value = ''
+  } catch (error) {
+    scriptLoaded.value = false
+    loadError.value = error.message
+  } finally {
+    scriptLoading.value = false
+  }
 }
 
 const fetchPrinters = async () => {
@@ -369,23 +411,19 @@ const saveTemplate = async () => {
   }
 }
 
-const previewTemplate = async () => {
+const previewTemplate = () => {
   if (!selectedPrinter.value) {
     alert('请先选择打印机')
     return
   }
   
-  const printerUrl = getPrinterUrl(selectedPrinter.value)
-  
-  try {
-    await loadLodopScript(printerUrl)
-  } catch (error) {
-    alert('加载打印控件失败，请检查打印机连接')
+  if (!scriptLoaded.value) {
+    alert('打印控件尚未加载完成，请等待加载成功后再预览')
     return
   }
   
   if (typeof window.getLodop === 'undefined') {
-    alert('打印控件加载失败，请检查打印机连接')
+    alert('打印控件加载失败，请重新选择打印机')
     return
   }
   
@@ -636,6 +674,44 @@ onMounted(() => {
 
 .mb-2 {
   margin-bottom: 8px;
+}
+
+.loading-status {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.loading-status.loading {
+  background: #1a3a5c;
+  color: #00d8ff;
+}
+
+.loading-status.success {
+  background: #1a4a2a;
+  color: #4ade80;
+}
+
+.loading-status.error {
+  background: #4a1a1a;
+  color: #f87171;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #00d8ff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .widget-name {
