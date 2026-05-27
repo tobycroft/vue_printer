@@ -80,9 +80,11 @@ export async function getPrinters() {
  */
 export async function getPrinterInfo(id) {
   try {
-    const response = await request(`/v1/device/info/get?id=${id}`, {
-      method: 'GET'
-    });
+    const headers = await getAuthHeaders()
+    const formData = new FormData();
+    formData.append('id', id);
+
+    const response = await requestWithForm('/v1/device/info/get', formData, headers);
 
     if (response.code === 0 && response.data) {
       return {
@@ -140,6 +142,9 @@ export async function addPrinterDevice(printer) {
     const formData = new FormData();
     formData.append('device_name', printer.device);
     formData.append('url', printer.url);
+    if (printer.remark) {
+      formData.append('remark', printer.remark);
+    }
 
     const response = await requestWithForm('/v1/device/info/add', formData, headers);
 
@@ -179,6 +184,9 @@ export async function updatePrinterDevice(printer) {
     formData.append('id', printer.id);
     formData.append('device_name', printer.device);
     formData.append('url', printer.url);
+    if (printer.remark) {
+      formData.append('remark', printer.remark);
+    }
 
     const response = await requestWithForm('/v1/device/info/update', formData, headers);
 
