@@ -426,32 +426,17 @@ const previewTemplate = () => {
     return
   }
   
-  if (typeof window.getCLodop === 'undefined') {
-    alert('打印控件加载失败，请重新选择打印机')
-    return
-  }
+  const printerUrl = getPrinterUrl(selectedPrinter.value)
+  const config = { url: printerUrl }
+  const template = JSON.parse(JSON.stringify(currentTemplate))
   
-  const LODOP = window.getCLodop()
-  if (!LODOP) {
-    alert('获取打印控件失败')
-    return
-  }
+  const params = new URLSearchParams()
+  params.set('config', encodeURIComponent(JSON.stringify(config)))
+  params.set('template', encodeURIComponent(JSON.stringify(template)))
   
-  LODOP.PRINT_INIT(currentTemplate.name || '打印模板预览')
-  LODOP.SET_PRINT_PAGESIZE(0, currentTemplate.paperWidth, currentTemplate.paperHeight, '自定义纸张')
-  currentTemplate.controls.forEach((control) => {
-    if (control.type === 'text') {
-      LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '')
-      LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize)
-      LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0)
-      LODOP.SET_PRINT_STYLEA(0, 'Alignment', control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1))
-    } else if (control.type === 'rect') {
-      LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1)
-    } else if (control.type === 'line') {
-      LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1)
-    }
-  })
-  LODOP.PREVIEW()
+  const previewUrl = chrome.runtime.getURL('print-preview.html') + '?' + params.toString()
+  
+  chrome.tabs.create({ url: previewUrl })
 }
 
 onMounted(() => {
