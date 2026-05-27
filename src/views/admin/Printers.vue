@@ -5,11 +5,11 @@
         <div class="header-text">
           <h2>打印机管理</h2>
           <p>查看和管理所有打印机设备</p>
+          <button class="btn btn-primary add-btn" @click="showAddModal = true">
+            <span class="btn-icon">➕</span>
+            新增打印机
+          </button>
         </div>
-        <button class="btn btn-primary" @click="showAddModal = true">
-          <span class="btn-icon">➕</span>
-          新增打印机
-        </button>
       </div>
     </div>
 
@@ -337,9 +337,34 @@ onMounted(() => {
 }
 
 .page-header .header-text p {
-  margin: 0;
+  margin: 0 0 16px 0;
   font-size: 14px;
   color: #999;
+}
+
+.page-header .header-text .add-btn {
+  padding: 6px 12px;
+  background: #00d8ff;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: fit-content;
+}
+
+.page-header .header-text .add-btn:hover {
+  background: #00b8e6;
+}
+
+.page-header .header-text .add-btn .btn-icon {
+  font-size: 14px;
 }
 
 .page-header .btn {
