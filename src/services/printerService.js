@@ -141,7 +141,7 @@ export async function addPrinterDevice(printer) {
     formData.append('device_name', printer.device);
     formData.append('url', printer.url);
 
-    const response = await requestWithForm('/v1/device/add', formData, headers);
+    const response = await requestWithForm('/v1/device/info/add', formData, headers);
 
     if (response.code === 0) {
       return {
@@ -180,7 +180,7 @@ export async function updatePrinterDevice(printer) {
     formData.append('device_name', printer.device);
     formData.append('url', printer.url);
 
-    const response = await requestWithForm('/v1/device/update', formData, headers);
+    const response = await requestWithForm('/v1/device/info/update', formData, headers);
 
     if (response.code === 0) {
       return {
@@ -214,7 +214,7 @@ export async function deletePrinterDevice(id) {
     const formData = new FormData();
     formData.append('id', id);
 
-    const response = await requestWithForm('/v1/device/delete', formData, headers);
+    const response = await requestWithForm('/v1/device/info/delete', formData, headers);
 
     if (response.code === 0) {
       return {
