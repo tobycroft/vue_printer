@@ -34,13 +34,59 @@
 
         <div class="info-item">
           <label>昵称</label>
-          <span class="info-value">{{ userInfo.nickname || '-' }}</span>
+          <span v-if="!editing" class="info-value">{{ userInfo.nickname || '-' }}</span>
+          <input v-else v-model="editForm.nickname" type="text" class="edit-input" placeholder="请输入昵称">
         </div>
 
         <div v-if="userInfo.username" class="info-item">
           <label>用户名</label>
           <span class="info-value">{{ userInfo.username }}</span>
         </div>
+
+        <div class="info-item">
+          <label>手机号</label>
+          <span v-if="!editing" class="info-value">{{ userInfo.phone || '-' }}</span>
+          <input v-else v-model="editForm.phone" type="tel" class="edit-input" placeholder="请输入手机号">
+        </div>
+
+        <div class="info-item">
+          <label>邮箱</label>
+          <span v-if="!editing" class="info-value">{{ userInfo.email || '-' }}</span>
+          <input v-else v-model="editForm.email" type="email" class="edit-input" placeholder="请输入邮箱">
+        </div>
+
+        <div class="info-item">
+          <label>性别</label>
+          <span v-if="!editing" class="info-value">{{ getGenderText(userInfo.gender) }}</span>
+          <select v-else v-model="editForm.gender" class="edit-input">
+            <option value="">请选择性别</option>
+            <option value="male">男</option>
+            <option value="female">女</option>
+            <option value="secret">保密</option>
+          </select>
+        </div>
+
+        <div class="info-item">
+          <label>生日</label>
+          <span v-if="!editing" class="info-value">{{ userInfo.birthday || '-' }}</span>
+          <input v-else v-model="editForm.birthday" type="date" class="edit-input">
+        </div>
+
+        <div class="info-item">
+          <label>联系地址</label>
+          <span v-if="!editing" class="info-value">{{ userInfo.address || '-' }}</span>
+          <input v-else v-model="editForm.address" type="text" class="edit-input" placeholder="请输入联系地址">
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button v-if="!editing" class="edit-btn" @click="startEditing">编辑信息</button>
+        <template v-else>
+          <button class="save-btn" @click="saveChanges" :disabled="saving">
+            {{ saving ? '保存中...' : '保存修改' }}
+          </button>
+          <button class="cancel-btn" @click="cancelEditing">取消</button>
+        </template>
       </div>
     </div>
 
@@ -52,12 +98,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getUserInfoDetail } from '@/services/apiService'
+import { ref, onMounted, computed } from 'vue'
+import { getUserInfoDetail, updateUserInfo } from '@/services/apiService'
 
 const loading = ref(false)
 const error = ref(null)
 const userInfo = ref(null)
+const editing = ref(false)
+const saving = ref(false)
+
+// 编辑表单
+const editForm = ref({
+  nickname: '',
+  phone: '',
+  email: '',
+  gender: '',
+  birthday: '',
+  address: ''
+})
 
 // 格式化日期（备用）
 const formatDate = (dateStr) => {
@@ -68,6 +126,17 @@ const formatDate = (dateStr) => {
   } catch (e) {
     return dateStr
   }
+}
+
+// 获取性别文本
+const getGenderText = (gender) => {
+  if (!gender) return '-'
+  const genderMap = {
+    male: '男',
+    female: '女',
+    secret: '保密'
+  }
+  return genderMap[gender] || '-' 
 }
 
 // 获取用户详细信息
@@ -115,6 +184,68 @@ const fetchUserInfo = async () => {
     error.value = '网络请求失败，请检查网络连接'
   } finally {
     loading.value = false
+  }
+}
+
+// 开始编辑
+const startEditing = () => {
+  editing.value = true
+  // 填充表单数据
+  editForm.value = {
+    nickname: userInfo.value.nickname || '',
+    phone: userInfo.value.phone || '',
+    email: userInfo.value.email || '',
+    gender: userInfo.value.gender || '',
+    birthday: userInfo.value.birthday || '',
+    address: userInfo.value.address || ''
+  }
+}
+
+// 取消编辑
+const cancelEditing = () => {
+  editing.value = false
+}
+
+// 保存修改
+const saveChanges = async () => {
+  saving.value = true
+  
+  try {
+    // 收集需要更新的字段
+    const updateData = {}
+    Object.keys(editForm.value).forEach(key => {
+      if (editForm.value[key] !== undefined && editForm.value[key] !== '') {
+        updateData[key] = editForm.value[key]
+      }
+    })
+    
+    if (Object.keys(updateData).length === 0) {
+      // 没有需要更新的字段
+      editing.value = false
+      saving.value = false
+      return
+    }
+    
+    // 调用更新接口
+    const result = await updateUserInfo(updateData)
+    
+    if (result.success) {
+      // 更新本地数据
+      userInfo.value = {
+        ...userInfo.value,
+        ...updateData
+      }
+      editing.value = false
+      // 显示成功提示
+      alert('用户信息更新成功')
+    } else {
+      alert(`更新失败: ${result.message || '未知错误'}`)
+    }
+  } catch (err) {
+    console.error('更新用户信息失败:', err)
+    alert('网络请求失败，请稍后重试')
+  } finally {
+    saving.value = false
   }
 }
 
@@ -200,9 +331,79 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
   color: #f44336;
+  font-size: 24px;
+  font-weight: bold;
   margin-bottom: 16px;
+}
+
+/* 编辑样式 */
+.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #4CAF50;
+  border-radius: 6px;
+  background: #2d2d2d;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #66BB6A;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #3d3d3d;
+}
+
+.edit-btn,
+.save-btn,
+.cancel-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.edit-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #45a049;
+}
+
+.save-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #1976D2;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
 }
 
 .error-state p {

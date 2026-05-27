@@ -419,6 +419,91 @@ export async function createCaptcha(timeout = 10000) {
 
 export { request, requestWithTimeout, requestWithForm };
 
+// ==================== 用户信息更新API ====================
+
+/**
+ * 更新用户信息
+ * @param {Object} userData - 用户信息
+ * @param {string} userData.nickname - 昵称
+ * @param {string} userData.avatar - 头像URL
+ * @param {string} userData.phone - 手机号
+ * @param {string} userData.email - 邮箱
+ * @param {string} userData.gender - 性别(male/female/secret)
+ * @param {string} userData.birthday - 生日(YYYY-MM-DD)
+ * @param {string} userData.address - 联系地址
+ * @returns {Promise} 更新结果
+ */
+export async function updateUserInfo(userData) {
+  try {
+    // 从chrome.storage.local获取token
+    let uid = ''
+    let token = ''
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      const result = await new Promise((resolve) => {
+        chrome.storage.local.get('vue_printer_user_data', resolve)
+      })
+      
+      if (result && result.vue_printer_user_data) {
+        uid = result.vue_printer_user_data.uid || ''
+        token = result.vue_printer_user_data.token || ''
+      }
+    }
+    
+    // 如果chrome.storage中没有，尝试从localStorage获取（兼容旧版本）
+    if (!uid || !token) {
+      const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
+      uid = authInfo.uid || ''
+      token = authInfo.token || ''
+    }
+
+    if (!uid || !token) {
+      return {
+        success: false,
+        message: '未登录，请先登录'
+      }
+    }
+
+    const formData = new FormData()
+    formData.append('uid', uid)
+    
+    // 添加需要更新的字段
+    Object.keys(userData).forEach(key => {
+      if (userData[key] !== undefined && userData[key] !== '') {
+        formData.append(key, userData[key])
+      }
+    })
+
+    const response = await fetch(`${API_BASE_URL}/v1/user/info/update`, {
+      method: 'POST',
+      headers: {
+        'uid': uid,
+        'token': token
+      },
+      body: formData
+    })
+
+    const data = await response.json()
+
+    if (data.code === 0) {
+      return {
+        success: true,
+        message: data.echo || '更新成功'
+      }
+    } else {
+      return {
+        success: false,
+        message: data.echo || '更新失败'
+      }
+    }
+  } catch (error) {
+    console.error('更新用户信息错误:', error)
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    }
+  }
+}
+
 // ==================== 服务器检测API ====================
 
 /**
