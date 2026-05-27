@@ -33,49 +33,14 @@
         </div>
 
         <div class="info-item">
+          <label>用户名</label>
+          <span class="info-value">{{ userInfo.username || '-' }}</span>
+        </div>
+
+        <div class="info-item">
           <label>昵称</label>
           <span v-if="!editing" class="info-value">{{ userInfo.nickname || '-' }}</span>
           <input v-else v-model="editForm.nickname" type="text" class="edit-input" placeholder="请输入昵称">
-        </div>
-
-        <div v-if="userInfo.username" class="info-item">
-          <label>用户名</label>
-          <span class="info-value">{{ userInfo.username }}</span>
-        </div>
-
-        <div class="info-item">
-          <label>手机号</label>
-          <span v-if="!editing" class="info-value">{{ userInfo.phone || '-' }}</span>
-          <input v-else v-model="editForm.phone" type="tel" class="edit-input" placeholder="请输入手机号">
-        </div>
-
-        <div class="info-item">
-          <label>邮箱</label>
-          <span v-if="!editing" class="info-value">{{ userInfo.email || '-' }}</span>
-          <input v-else v-model="editForm.email" type="email" class="edit-input" placeholder="请输入邮箱">
-        </div>
-
-        <div class="info-item">
-          <label>性别</label>
-          <span v-if="!editing" class="info-value">{{ getGenderText(userInfo.gender) }}</span>
-          <select v-else v-model="editForm.gender" class="edit-input">
-            <option value="">请选择性别</option>
-            <option value="male">男</option>
-            <option value="female">女</option>
-            <option value="secret">保密</option>
-          </select>
-        </div>
-
-        <div class="info-item">
-          <label>生日</label>
-          <span v-if="!editing" class="info-value">{{ userInfo.birthday || '-' }}</span>
-          <input v-else v-model="editForm.birthday" type="date" class="edit-input">
-        </div>
-
-        <div class="info-item">
-          <label>联系地址</label>
-          <span v-if="!editing" class="info-value">{{ userInfo.address || '-' }}</span>
-          <input v-else v-model="editForm.address" type="text" class="edit-input" placeholder="请输入联系地址">
         </div>
       </div>
 
@@ -109,12 +74,7 @@ const saving = ref(false)
 
 // 编辑表单
 const editForm = ref({
-  nickname: '',
-  phone: '',
-  email: '',
-  gender: '',
-  birthday: '',
-  address: ''
+  nickname: ''
 })
 
 // 格式化日期（备用）
@@ -128,16 +88,7 @@ const formatDate = (dateStr) => {
   }
 }
 
-// 获取性别文本
-const getGenderText = (gender) => {
-  if (!gender) return '-'
-  const genderMap = {
-    male: '男',
-    female: '女',
-    secret: '保密'
-  }
-  return genderMap[gender] || '-' 
-}
+
 
 // 获取用户详细信息
 const fetchUserInfo = async () => {
@@ -192,12 +143,7 @@ const startEditing = () => {
   editing.value = true
   // 填充表单数据
   editForm.value = {
-    nickname: userInfo.value.nickname || '',
-    phone: userInfo.value.phone || '',
-    email: userInfo.value.email || '',
-    gender: userInfo.value.gender || '',
-    birthday: userInfo.value.birthday || '',
-    address: userInfo.value.address || ''
+    nickname: userInfo.value.nickname || ''
   }
 }
 
@@ -211,33 +157,22 @@ const saveChanges = async () => {
   saving.value = true
   
   try {
-    // 收集需要更新的字段
-    const updateData = {}
-    Object.keys(editForm.value).forEach(key => {
-      if (editForm.value[key] !== undefined && editForm.value[key] !== '') {
-        updateData[key] = editForm.value[key]
-      }
-    })
-    
-    if (Object.keys(updateData).length === 0) {
-      // 没有需要更新的字段
-      editing.value = false
+    const nickname = editForm.value.nickname.trim()
+    if (!nickname) {
+      alert('昵称不能为空')
       saving.value = false
       return
     }
     
     // 调用更新接口
-    const result = await updateUserInfo(updateData)
+    const result = await updateUserInfo({ nickname })
     
     if (result.success) {
       // 更新本地数据
-      userInfo.value = {
-        ...userInfo.value,
-        ...updateData
-      }
+      userInfo.value.nickname = nickname
       editing.value = false
       // 显示成功提示
-      alert('用户信息更新成功')
+      alert('昵称更新成功')
     } else {
       alert(`更新失败: ${result.message || '未知错误'}`)
     }
