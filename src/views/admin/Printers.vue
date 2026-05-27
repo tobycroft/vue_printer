@@ -53,8 +53,8 @@
         </div>
         <div class="printer-actions">
         <button class="btn btn-primary" @click="viewPrinter(printer)">查看详情</button>
-        <button class="btn btn-danger" @click="deletePrinter(printer.id)">删除</button>
         <button class="btn btn-secondary" @click="showEditModal(printer)">编辑</button>
+        <button class="btn btn-danger" @click="deletePrinter(printer.id)">删除</button>
       </div>
       </div>
     </div>

@@ -2,13 +2,54 @@
 import { request, requestWithForm } from './apiService'
 
 /**
+ * 获取认证Header
+ * @returns {Object} 包含uid和token的Header对象
+ */
+async function getAuthHeaders() {
+  let uid = ''
+  let token = ''
+  
+  try {
+    // 从chrome.storage.local获取用户数据
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      const result = await new Promise((resolve) => {
+        chrome.storage.local.get('vue_printer_user_data', resolve)
+      })
+      
+      if (result && result.vue_printer_user_data) {
+        uid = result.vue_printer_user_data.uid
+        token = result.vue_printer_user_data.token
+      }
+    }
+    
+    // 如果chrome.storage中没有，尝试从localStorage获取（兼容旧版本）
+    if (!uid || !token) {
+      const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
+      uid = authInfo.uid || uid
+      token = authInfo.token || token
+    }
+  } catch (error) {
+    console.error('获取认证信息失败:', error)
+  }
+  
+  const headers = {}
+  if (uid) headers['uid'] = uid
+  if (token) headers['token'] = token
+  
+  return headers
+}
+
+/**
  * 获取打印机列表
  * @returns {Promise} 打印机列表
  */
 export async function getPrinters() {
   try {
+    const headers = await getAuthHeaders()
+    
     const response = await request('/v1/device/info/', {
-      method: 'GET'
+      method: 'GET',
+      headers: headers
     });
 
     if (response.code === 0 && response.data) {
@@ -95,11 +136,12 @@ export async function testPrinterConnection(id) {
  */
 export async function addPrinterDevice(printer) {
   try {
+    const headers = await getAuthHeaders()
     const formData = new FormData();
-    formData.append('device', printer.device);
+    formData.append('device_name', printer.device);
     formData.append('url', printer.url);
 
-    const response = await requestWithForm('/v1/device/info/add', formData);
+    const response = await requestWithForm('/v1/device/add', formData, headers);
 
     if (response.code === 0) {
       return {
@@ -132,12 +174,13 @@ export async function addPrinterDevice(printer) {
  */
 export async function updatePrinterDevice(printer) {
   try {
+    const headers = await getAuthHeaders()
     const formData = new FormData();
     formData.append('id', printer.id);
-    formData.append('device', printer.device);
+    formData.append('device_name', printer.device);
     formData.append('url', printer.url);
 
-    const response = await requestWithForm('/v1/device/info/update', formData);
+    const response = await requestWithForm('/v1/device/update', formData, headers);
 
     if (response.code === 0) {
       return {
@@ -167,10 +210,11 @@ export async function updatePrinterDevice(printer) {
  */
 export async function deletePrinterDevice(id) {
   try {
+    const headers = await getAuthHeaders()
     const formData = new FormData();
     formData.append('id', id);
 
-    const response = await requestWithForm('/v1/device/info/delete', formData);
+    const response = await requestWithForm('/v1/device/delete', formData, headers);
 
     if (response.code === 0) {
       return {

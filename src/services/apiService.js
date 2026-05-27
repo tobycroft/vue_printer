@@ -60,28 +60,23 @@ async function requestWithTimeout(url, options = {}, timeout = 10000) {
 }
 
 /**
- * 表单数据请求方法
- * @param {string} url - 请求URL
+ * 使用FormData发送请求
+ * @param {string} url - 请求地址
  * @param {FormData} formData - 表单数据
- * @param {Object} headers - 额外请求头
- * @returns {Promise} 响应数据
+ * @param {Object} headers - 请求头
+ * @param {Object} options - 请求选项
+ * @returns {Promise} 请求结果
  */
-async function requestWithForm(url, formData, headers = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        ...headers
-      }
-    });
+async function requestWithForm(url, formData, headers = {}, options = {}) {
+  const requestOptions = {
+    method: options.method || 'POST',
+    headers: {
+      ...headers
+    },
+    body: formData
+  };
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('表单请求错误:', error);
-    throw error;
-  }
+  return await request(url, requestOptions);
 }
 
 // ==================== 认证相关API ====================
