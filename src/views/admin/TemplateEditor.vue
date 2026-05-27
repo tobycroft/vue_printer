@@ -1,5 +1,13 @@
 <template>
   <div class="template-editor-container">
+    <iframe 
+      ref="printIframe" 
+      id="print-iframe"
+      :src="sandboxUrl" 
+      style="display: none;"
+      @load="onIframeLoad"
+    ></iframe>
+    
     <header class="editor-header">
       <div class="header-left">
         <button class="btn btn-secondary back-btn" @click="goBack">
@@ -155,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getPrinters } from '@/services/printerService'
 
@@ -194,23 +202,43 @@ const scriptLoaded = ref(false)
 const scriptLoading = ref(false)
 const loadError = ref('')
 
+const printIframe = ref(null)
+const sandboxUrl = computed(() => {
+  return chrome.runtime.getURL('sandbox-print.html')
+})
+
 const getPrinterUrl = (printer) => {
   if (!printer) return ''
   return printer.url || printer.host || ''
 }
 
-const sendMessageToContentScript = (action, data) => {
+const sendMessageToIframe = (action, data) => {
   return new Promise((resolve) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        chrome.tabs.sendMessage(tabs[0].id, { action, ...data }, (response) => {
-          resolve(response || { success: false })
-        })
-      } else {
-        resolve({ success: false, error: '无法获取当前标签页' })
+    if (!printIframe.value) {
+      resolve({ success: false, error: 'iframe 未加载' })
+      return
+    }
+    
+    const iframeWindow = printIframe.value.contentWindow
+    if (!iframeWindow) {
+      resolve({ success: false, error: 'iframe window 不可访问' })
+      return
+    }
+    
+    const messageHandler = (event) => {
+      if (event.source === iframeWindow) {
+        window.removeEventListener('message', messageHandler)
+        resolve(event.data)
       }
-    })
+    }
+    
+    window.addEventListener('message', messageHandler)
+    iframeWindow.postMessage({ action, ...data }, '*')
   })
+}
+
+const onIframeLoad = () => {
+  console.log('Print iframe loaded')
 }
 
 const onPrinterChange = async () => {
@@ -231,18 +259,11 @@ const onPrinterChange = async () => {
   loadError.value = ''
   
   try {
-    await sendMessageToContentScript('setLodopConfig', { config: { url: printerUrl } })
-    
-    const loadResult = await sendMessageToContentScript('loadCLodop', {})
-    if (!loadResult.success) {
-      throw new Error(loadResult.error || '加载失败')
-    }
-    
-    const statusResult = await sendMessageToContentScript('getLodopStatus', {})
-    scriptLoaded.value = statusResult.loaded
+    const result = await sendMessageToIframe('setConfig', { config: { url: printerUrl } })
+    scriptLoaded.value = result.success
     
     if (!scriptLoaded.value) {
-      throw new Error('打印控件加载失败')
+      throw new Error(result.error || '打印控件加载失败')
     }
     loadError.value = ''
   } catch (error) {
@@ -421,7 +442,7 @@ const previewTemplate = async () => {
   }
   
   try {
-    const result = await sendMessageToContentScript('previewTemplate', { template: currentTemplate })
+    const result = await sendMessageToIframe('preview', { template: JSON.parse(JSON.stringify(currentTemplate)) })
     if (!result.success) {
       alert(result.error || '打印预览失败')
     }
