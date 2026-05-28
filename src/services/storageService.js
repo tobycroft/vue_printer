@@ -1,6 +1,53 @@
 class StorageService {
   constructor() {
-    this.storage = chrome.storage.local;
+    // 检测是否在浏览器扩展环境中
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      this.storage = chrome.storage.local;
+      this.isChromeStorage = true;
+    } else {
+      // 普通网页环境使用 localStorage 模拟
+      this.storage = {
+        get: (keys) => {
+          return new Promise((resolve) => {
+            const result = {};
+            if (typeof keys === 'string') {
+              const value = localStorage.getItem(keys);
+              result[keys] = value ? JSON.parse(value) : undefined;
+            } else if (Array.isArray(keys)) {
+              keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                result[key] = value ? JSON.parse(value) : undefined;
+              });
+            } else if (typeof keys === 'object') {
+              Object.keys(keys).forEach(key => {
+                const value = localStorage.getItem(key);
+                result[key] = value ? JSON.parse(value) : keys[key];
+              });
+            }
+            resolve(result);
+          });
+        },
+        set: (items) => {
+          return new Promise((resolve) => {
+            Object.keys(items).forEach(key => {
+              localStorage.setItem(key, JSON.stringify(items[key]));
+            });
+            resolve();
+          });
+        },
+        remove: (keys) => {
+          return new Promise((resolve) => {
+            if (typeof keys === 'string') {
+              localStorage.removeItem(keys);
+            } else if (Array.isArray(keys)) {
+              keys.forEach(key => localStorage.removeItem(key));
+            }
+            resolve();
+          });
+        }
+      };
+      this.isChromeStorage = false;
+    }
     this.USER_DATA_KEY = 'vue_printer_user_data';
     this.ENCRYPTION_KEY = 'vue_printer_secure_key'; // 实际使用时应该从安全渠道获取
     this.TEMPLATES_KEY = 'vue_printer_templates';
