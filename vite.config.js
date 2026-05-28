@@ -13,10 +13,8 @@ function copyNonHtmlToDist() {
     mkdirSync(distDir, { recursive: true })
   }
 
-  // 只复制非 HTML 文件和目录
   const items = require('fs').readdirSync(publicDir)
   items.forEach(item => {
-    // 跳过 HTML 文件
     if (item.endsWith('.html')) {
       return
     }
@@ -26,7 +24,6 @@ function copyNonHtmlToDist() {
     cpSync(srcPath, destPath, { recursive: true })
   })
   
-  // 重命名 Vite 生成的 HTML 文件以匹配 manifest.json 的路径
   const popupAuthSrc = resolve(distDir, 'popup-auth.html')
   const popupPageSrc = resolve(distDir, 'popup-page.html')
   const loginSrc = resolve(distDir, 'login-page.html')
@@ -35,7 +32,6 @@ function copyNonHtmlToDist() {
   const popupPagePath = resolve(distDir, 'popup', 'popup.html')
   const loginPath = resolve(distDir, 'login.html')
   
-  // 确保目标目录存在
   mkdirSync(resolve(distDir, 'popup'), { recursive: true })
   
   if (existsSync(popupAuthSrc)) {
@@ -48,8 +44,6 @@ function copyNonHtmlToDist() {
     renameSync(loginSrc, loginPath)
   }
   
-  // 修复 popup/auth.html 和 popup/popup.html 中的资源路径
-  // 从 ./assets/ 改为 ../assets/
   [popupAuthPath, popupPagePath].forEach(filePath => {
     if (existsSync(filePath)) {
       let content = readFileSync(filePath, 'utf-8')
@@ -59,33 +53,39 @@ function copyNonHtmlToDist() {
   })
 }
 
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    {
-      name: 'extension-build',
-      closeBundle() {
-        copyNonHtmlToDist()
+export default defineConfig(({ mode }) => {
+  const isExtensionBuild = mode === 'extension'
+  
+  return {
+    plugins: [
+      vue(),
+      vueDevTools(),
+      {
+        name: 'extension-build',
+        closeBundle() {
+          if (isExtensionBuild) {
+            copyNonHtmlToDist()
+          }
+        }
       }
-    }
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    },
-  },
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        'popup/popup': resolve(__dirname, 'popup-page.html'),
-        login: resolve(__dirname, 'login-page.html'),
-        'popup/auth': resolve(__dirname, 'popup-auth.html'),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
-  },
-  base: './', // 使用相对路径，适配 Chrome Extension
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      rollupOptions: isExtensionBuild ? {
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          'popup/popup': resolve(__dirname, 'popup-page.html'),
+          login: resolve(__dirname, 'login-page.html'),
+          'popup/auth': resolve(__dirname, 'popup-auth.html'),
+        },
+      } : {},
+    },
+    base: isExtensionBuild ? './' : '/',
+  }
 })

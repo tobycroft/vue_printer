@@ -365,10 +365,11 @@ const deleteSelectedControl = () => {
 const startDragControl = (event, control) => {
   selectedControl.value = control
   draggingControl.value = control
-  const paper = event.currentTarget
+  const paper = document.querySelector('.virtual-paper')
   const rect = paper.getBoundingClientRect()
-  dragOffset.x = event.clientX - rect.left - control.x
-  dragOffset.y = event.clientY - rect.top - control.y
+  const scale = currentTemplate.paperWidth / rect.width
+  dragOffset.x = (event.clientX - rect.left) * scale - control.x
+  dragOffset.y = (event.clientY - rect.top) * scale - control.y
   document.addEventListener('mousemove', onDragControl)
   document.addEventListener('mouseup', stopDragControl)
 }
@@ -377,8 +378,9 @@ const onDragControl = (event) => {
   if (!draggingControl.value) return
   const paper = document.querySelector('.virtual-paper')
   const rect = paper.getBoundingClientRect()
-  let newX = event.clientX - rect.left - dragOffset.x
-  let newY = event.clientY - rect.top - dragOffset.y
+  const scale = currentTemplate.paperWidth / rect.width
+  let newX = (event.clientX - rect.left) * scale - dragOffset.x
+  let newY = (event.clientY - rect.top) * scale - dragOffset.y
   newX = Math.max(0, Math.min(currentTemplate.paperWidth - draggingControl.value.width, newX))
   newY = Math.max(0, Math.min(currentTemplate.paperHeight - draggingControl.value.height, newY))
   draggingControl.value.x = Math.round(newX)

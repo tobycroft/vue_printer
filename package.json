@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "build:debug": "vite build --mode development --debug",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:extension": "vite build --mode extension",
+    "dev:extension": "vite --mode extension"
   },
   "dependencies": {
     "vue": "^3.5.32",
