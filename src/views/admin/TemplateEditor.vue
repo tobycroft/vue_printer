@@ -268,27 +268,28 @@ const fetchPrinters = async () => {
   }
 }
 
+const paperScale = ref(1)
+
 const paperStyle = computed(() => {
-  const scale = Math.min(
+  paperScale.value = Math.min(
     (window.innerWidth - 320) / currentTemplate.paperWidth,
     (window.innerHeight - 100) / currentTemplate.paperHeight,
     2
   )
   return {
-    width: `${currentTemplate.paperWidth * scale}px`,
-    height: `${currentTemplate.paperHeight * scale}px`,
-    transform: `scale(${scale})`,
-    transformOrigin: 'top left'
+    width: `${currentTemplate.paperWidth * paperScale.value}px`,
+    height: `${currentTemplate.paperHeight * paperScale.value}px`
   }
 })
 
 const getControlStyle = (control) => {
+  const scale = paperScale.value
   return {
-    left: `${control.x}px`,
-    top: `${control.y}px`,
-    width: `${control.width}px`,
-    height: `${control.height}px`,
-    fontSize: `${control.fontSize}px`,
+    left: `${control.x * scale}px`,
+    top: `${control.y * scale}px`,
+    width: `${control.width * scale}px`,
+    height: `${control.height * scale}px`,
+    fontSize: `${control.fontSize * scale}px`,
     fontWeight: control.fontWeight,
     textAlign: control.align,
     cursor: 'move'
@@ -322,9 +323,8 @@ const onDrop = (event) => {
   if (!draggedWidget.value) return
   const paper = event.currentTarget
   const rect = paper.getBoundingClientRect()
-  const scale = currentTemplate.paperWidth / rect.width
-  const x = (event.clientX - rect.left) * scale
-  const y = (event.clientY - rect.top) * scale
+  const x = (event.clientX - rect.left) / paperScale.value
+  const y = (event.clientY - rect.top) / paperScale.value
   const newControl = {
     id: Date.now().toString(),
     type: draggedWidget.value.type,
@@ -367,9 +367,9 @@ const startDragControl = (event, control) => {
   draggingControl.value = control
   const paper = document.querySelector('.virtual-paper')
   const rect = paper.getBoundingClientRect()
-  const scale = currentTemplate.paperWidth / rect.width
-  dragOffset.x = (event.clientX - rect.left) * scale - control.x
-  dragOffset.y = (event.clientY - rect.top) * scale - control.y
+  const scale = paperScale.value
+  dragOffset.x = (event.clientX - rect.left) / scale - control.x
+  dragOffset.y = (event.clientY - rect.top) / scale - control.y
   document.addEventListener('mousemove', onDragControl)
   document.addEventListener('mouseup', stopDragControl)
 }
@@ -378,9 +378,9 @@ const onDragControl = (event) => {
   if (!draggingControl.value) return
   const paper = document.querySelector('.virtual-paper')
   const rect = paper.getBoundingClientRect()
-  const scale = currentTemplate.paperWidth / rect.width
-  let newX = (event.clientX - rect.left) * scale - dragOffset.x
-  let newY = (event.clientY - rect.top) * scale - dragOffset.y
+  const scale = paperScale.value
+  let newX = (event.clientX - rect.left) / scale - dragOffset.x
+  let newY = (event.clientY - rect.top) / scale - dragOffset.y
   newX = Math.max(0, Math.min(currentTemplate.paperWidth - draggingControl.value.width, newX))
   newY = Math.max(0, Math.min(currentTemplate.paperHeight - draggingControl.value.height, newY))
   draggingControl.value.x = Math.round(newX)
