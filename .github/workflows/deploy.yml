@@ -35,5 +35,6 @@ jobs:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
           external_repository: TuuzNet/crx_printer
           publish_dir: ./dist
+          publish_branch: master
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
