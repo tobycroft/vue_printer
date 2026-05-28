@@ -1,4 +1,4 @@
-name: Deploy to crx_printer
+name: Deploy to fe_ruichi
 
 on:
   push:
@@ -6,46 +6,34 @@ on:
       - master
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '26'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: 'pnpm'
+
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build extension
-        run: pnpm run build:extension
+      - name: Build project
+        run: pnpm run build
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
+      - name: Deploy to fe_ruichi
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Clone target repo
-        run: git clone git@github.com:TuuzNet/crx_printer.git target-repo
-
-      - name: Copy dist to target repo
-        run: |
-          rm -rf target-repo/*
-          cp -r dist/* target-repo/
-
-      - name: Commit and push
-        working-directory: target-repo
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add .
-          git diff --quiet || git commit -m "Update from vue_printer: $GITHUB_SHA"
-          git push
+          deploy_key: ${{ secrets.DEPLOY_KEY }}
+          external_repository: TuuzNet/fe_ruichi
+          publish_dir: ./dist
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
