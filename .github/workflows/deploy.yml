@@ -1,4 +1,4 @@
-name: Deploy to fe_ruichi
+name: Deploy to crx_printer
 
 on:
   push:
@@ -29,11 +29,11 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Deploy to fe_ruichi
+      - name: Deploy to crx_printer
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.DEPLOY_KEY }}
-          external_repository: TuuzNet/fe_ruichi
+          external_repository: TuuzNet/crx_printer
           publish_dir: ./dist
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
