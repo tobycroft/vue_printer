@@ -1,0 +1,51 @@
+name: Deploy to crx_printer
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build extension
+        run: pnpm run build:extension
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: TuuzNet/crx_printer
+          ref: main
+          token: ${{ secrets.GH_PAT }}
+          path: target-repo
+
+      - name: Copy dist to target repo
+        run: |
+          rm -rf target-repo/*
+          cp -r dist/* target-repo/
+
+      - name: Commit and push
+        working-directory: target-repo
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git diff --quiet || git commit -m "Update from vue_printer: $GITHUB_SHA"
+          git push
