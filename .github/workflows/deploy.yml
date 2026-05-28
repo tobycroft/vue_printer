@@ -28,13 +28,13 @@ jobs:
       - name: Build extension
         run: pnpm run build:extension
 
-      - name: Checkout target repo
-        uses: actions/checkout@v4
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
         with:
-          repository: TuuzNet/crx_printer
-          ref: main
-          token: ${{ secrets.GH_PAT }}
-          path: target-repo
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Clone target repo
+        run: git clone git@github.com:TuuzNet/crx_printer.git target-repo
 
       - name: Copy dist to target repo
         run: |
