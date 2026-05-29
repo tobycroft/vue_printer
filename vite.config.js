@@ -2,7 +2,6 @@ import { fileURLToPath, URL } from 'node:url'
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import { writeFileSync, mkdirSync, existsSync, cpSync, renameSync, readFileSync } from 'fs'
 
 function copyNonHtmlToDist() {
@@ -59,7 +58,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       vue(),
-      vueDevTools(),
       {
         name: 'extension-build',
         closeBundle() {
@@ -71,12 +69,17 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        'vue': 'vue/dist/vue.esm-bundler.js'
       },
     },
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      modulePreload: {
+        polyfill: false
+      },
+      target: 'esnext',
       rollupOptions: isExtensionBuild ? {
         input: {
           main: resolve(__dirname, 'index.html'),
@@ -84,6 +87,13 @@ export default defineConfig(({ mode }) => {
           login: resolve(__dirname, 'login-page.html'),
           'popup/auth': resolve(__dirname, 'popup-auth.html'),
         },
+        preserveEntrySignatures: 'strict',
+        output: {
+          format: 'es',
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/chunks/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]'
+        }
       } : {},
     },
     base: isExtensionBuild ? './' : '/',

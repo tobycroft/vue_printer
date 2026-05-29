@@ -13,7 +13,7 @@
     "<all_urls>"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' http://localhost:8000 http://127.0.0.1:8000; object-src 'self'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline'"
   },
   "background": {
     "service_worker": "background.js",
