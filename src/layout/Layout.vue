@@ -1,6 +1,5 @@
 <template>
   <div class="admin-layout">
-    <!-- 左侧菜单 -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-icon">🖨️</div>
@@ -24,7 +23,6 @@
       </div>
     </aside>
 
-    <!-- 右侧内容区域 -->
     <main class="content-wrapper">
       <header class="content-header">
         <h1>{{ $route.meta.title }}</h1>
@@ -42,7 +40,8 @@ import { ref } from 'vue'
 const menus = ref([
   { path: '/admin/home', title: '首页', icon: '🏠' },
   { path: '/admin/userinfo', title: '用户信息', icon: '👤' },
-  { path: '/admin/printers', title: '打印机管理', icon: '🖨️' },
+  { path: '/admin/local-printers', title: '本地打印机', icon: '🖨️' },
+  { path: '/admin/printers', title: '所有打印机', icon: '📋' },
   { path: '/admin/templates', title: '打印模板管理', icon: '📄' },
   { path: '/admin/help', title: '帮助', icon: '❓' },
   { path: '/admin/about', title: '关于', icon: '️' }
@@ -60,7 +59,6 @@ const menus = ref([
   padding: 0;
 }
 
-/* 左侧菜单样式 */
 .sidebar {
   width: 260px;
   min-width: 260px;
@@ -149,7 +147,6 @@ const menus = ref([
   color: #666;
 }
 
-/* 右侧内容区域样式 */
 .content-wrapper {
   flex: 1;
   display: flex;
@@ -182,7 +179,6 @@ const menus = ref([
   min-height: 0;
 }
 
-/* 滚动条样式 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

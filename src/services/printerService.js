@@ -1,16 +1,10 @@
-// 打印机管理相关API
 import { request, requestWithForm } from './apiService'
 
-/**
- * 获取认证Header
- * @returns {Object} 包含uid和token的Header对象
- */
 async function getAuthHeaders() {
   let uid = ''
   let token = ''
   
   try {
-    // 从chrome.storage.local获取用户数据
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       const result = await new Promise((resolve) => {
         chrome.storage.local.get('vue_printer_user_data', resolve)
@@ -22,7 +16,6 @@ async function getAuthHeaders() {
       }
     }
     
-    // 如果chrome.storage中没有，尝试从localStorage获取（兼容旧版本）
     if (!uid || !token) {
       const authInfo = JSON.parse(localStorage.getItem('auth_info') || '{}')
       uid = authInfo.uid || uid
@@ -39,10 +32,30 @@ async function getAuthHeaders() {
   return headers
 }
 
-/**
- * 获取打印机列表
- * @returns {Promise} 打印机列表
- */
+function generateFingerprint() {
+  let fingerprint = localStorage.getItem('device_fingerprint')
+  if (!fingerprint) {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    ctx.textBaseline = 'top'
+    ctx.font = '14px Arial'
+    ctx.fillText('fingerprint', 2, 2)
+    const data = canvas.toDataURL()
+    fingerprint = data.replace(/[^a-zA-Z0-9]/g, '').slice(-32)
+    localStorage.setItem('device_fingerprint', fingerprint)
+  }
+  return fingerprint
+}
+
+function getComputerName() {
+  let name = localStorage.getItem('computer_name')
+  if (!name) {
+    name = '我的电脑'
+    localStorage.setItem('computer_name', name)
+  }
+  return name
+}
+
 export async function getPrinters() {
   try {
     const headers = await getAuthHeaders()
@@ -73,95 +86,29 @@ export async function getPrinters() {
   }
 }
 
-/**
- * 获取单个打印机信息
- * @param {number} id - 打印机ID
- * @returns {Promise} 打印机信息
- */
-export async function getPrinterInfo(id) {
+export async function getDeviceConfig() {
   try {
     const headers = await getAuthHeaders()
-    const formData = new FormData();
-    formData.append('id', id);
+    const fingerprint = generateFingerprint()
+    const formData = new FormData()
+    formData.append('fingerprint', fingerprint)
 
-    const response = await requestWithForm('/v1/device/info/get', formData, headers);
-
-    if (response.code === 0 && response.data) {
-      return {
-        success: true,
-        data: response.data,
-        message: response.echo || '获取打印机信息成功'
-      };
-    } else {
-      return {
-        success: false,
-        message: response.echo || '获取打印机信息失败'
-      };
-    }
-  } catch (error) {
-    console.error('获取打印机信息错误:', error);
-    return {
-      success: false,
-      message: error.message || '网络请求失败'
-    };
-  }
-}
-
-/**
- * 测试打印机连接
- * @param {number} id - 打印机ID
- * @returns {Promise} 测试结果
- */
-export async function testPrinterConnection(id) {
-  try {
-    // 这里可以实现测试打印机连接的逻辑
-    console.log('测试打印机连接:', id);
-    return {
-      success: true,
-      message: '打印机连接测试成功'
-    };
-  } catch (error) {
-    console.error('测试打印机连接错误:', error);
-    return {
-      success: false,
-      message: error.message || '打印机连接测试失败'
-    };
-  }
-}
-
-/**
- * 新增打印机设备
- * @param {Object} printer - 打印机信息
- * @param {string} printer.device - 打印机名称
- * @param {string} printer.url - 打印机地址
- * @returns {Promise} 操作结果
- */
-export async function addPrinterDevice(printer) {
-  try {
-    const headers = await getAuthHeaders()
-    const formData = new FormData();
-    formData.append('device_name', printer.device);
-    formData.append('url', printer.url);
-    if (printer.remark) {
-      formData.append('remark', printer.remark);
-    }
-
-    const response = await requestWithForm('/v1/device/info/add', formData, headers);
+    const response = await requestWithForm('/v1/device/config/get', formData, headers)
 
     if (response.code === 0) {
       return {
         success: true,
         data: response.data,
-        message: response.echo || '添加打印机成功'
+        message: response.echo || '获取配置成功'
       };
     } else {
       return {
         success: false,
-        message: response.echo || '添加打印机失败'
+        message: response.echo || '获取配置失败'
       };
     }
   } catch (error) {
-    console.error('添加打印机错误:', error);
+    console.error('获取配置错误:', error);
     return {
       success: false,
       message: error.message || '网络请求失败'
@@ -169,41 +116,30 @@ export async function addPrinterDevice(printer) {
   }
 }
 
-/**
- * 更新打印机设备
- * @param {Object} printer - 打印机信息
- * @param {number} printer.id - 打印机ID
- * @param {string} printer.device - 打印机名称
- * @param {string} printer.url - 打印机地址
- * @returns {Promise} 操作结果
- */
-export async function updatePrinterDevice(printer) {
+export async function saveDeviceConfig(port) {
   try {
     const headers = await getAuthHeaders()
-    const formData = new FormData();
-    formData.append('id', printer.id);
-    formData.append('device_name', printer.device);
-    formData.append('url', printer.url);
-    if (printer.remark) {
-      formData.append('remark', printer.remark);
-    }
+    const fingerprint = generateFingerprint()
+    const formData = new FormData()
+    formData.append('fingerprint', fingerprint)
+    formData.append('port', port)
 
-    const response = await requestWithForm('/v1/device/info/update', formData, headers);
+    const response = await requestWithForm('/v1/device/config/save', formData, headers)
 
     if (response.code === 0) {
       return {
         success: true,
         data: response.data,
-        message: response.echo || '更新打印机成功'
+        message: response.echo || '保存配置成功'
       };
     } else {
       return {
         success: false,
-        message: response.echo || '更新打印机失败'
+        message: response.echo || '保存配置失败'
       };
     }
   } catch (error) {
-    console.error('更新打印机错误:', error);
+    console.error('保存配置错误:', error);
     return {
       success: false,
       message: error.message || '网络请求失败'
@@ -211,36 +147,99 @@ export async function updatePrinterDevice(printer) {
   }
 }
 
-/**
- * 删除打印机设备
- * @param {number} id - 打印机ID
- * @returns {Promise} 操作结果
- */
-export async function deletePrinterDevice(id) {
+export async function getLocalDevices() {
   try {
     const headers = await getAuthHeaders()
-    const formData = new FormData();
-    formData.append('id', id);
+    const fingerprint = generateFingerprint()
+    const formData = new FormData()
+    formData.append('fingerprint', fingerprint)
 
-    const response = await requestWithForm('/v1/device/info/delete', formData, headers);
+    const response = await requestWithForm('/v1/device/config/device/list', formData, headers)
 
     if (response.code === 0) {
       return {
         success: true,
         data: response.data,
-        message: response.echo || '删除打印机成功'
+        message: response.echo || '获取本地打印机成功'
       };
     } else {
       return {
         success: false,
-        message: response.echo || '删除打印机失败'
+        message: response.echo || '获取本地打印机失败'
       };
     }
   } catch (error) {
-    console.error('删除打印机错误:', error);
+    console.error('获取本地打印机错误:', error);
     return {
       success: false,
       message: error.message || '网络请求失败'
     };
   }
 }
+
+export async function addLocalDevice(deviceName, remark) {
+  try {
+    const headers = await getAuthHeaders()
+    const fingerprint = generateFingerprint()
+    const computerName = getComputerName()
+    const formData = new FormData()
+    formData.append('device_name', deviceName)
+    formData.append('fingerprint', fingerprint)
+    formData.append('computer_name', computerName)
+    if (remark) {
+      formData.append('remark', remark)
+    }
+
+    const response = await requestWithForm('/v1/device/config/device/add', formData, headers)
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '添加本地打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '添加本地打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('添加本地打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
+
+export async function deleteLocalDevice(id) {
+  try {
+    const headers = await getAuthHeaders()
+    const formData = new FormData()
+    formData.append('id', id)
+
+    const response = await requestWithForm('/v1/device/config/device/delete', formData, headers)
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '删除本地打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '删除本地打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('删除本地打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
+
+export { generateFingerprint, getComputerName }

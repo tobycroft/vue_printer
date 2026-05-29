@@ -51,13 +51,13 @@
             <select v-model="selectedPrinterId" @change="onPrinterChange" class="form-control">
               <option value="">请选择打印机</option>
               <option v-for="printer in printers" :key="printer.id" :value="printer.id">
-                {{ printer.device_name }} ({{ printer.url }})
+                {{ printer.device_name }} ({{ printer.computer_name }})
               </option>
             </select>
           </div>
           <div v-if="selectedPrinter" class="printer-info">
             <p>已选打印机: {{ selectedPrinter.device_name }}</p>
-            <p>CLodop地址: <code>{{ getPrinterUrl(selectedPrinter) }}/CLodopfuncs.js</code></p>
+            <p>Lodop地址: <code>http://127.0.0.1:{{ printerPort }}/CLodopfuncs.js</code></p>
             <div v-if="scriptLoading" class="loading-status loading">
               <span class="spinner"></span> 正在加载打印控件...
             </div>
@@ -157,10 +157,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
-import { getPrinters } from '@/services/printerService'
+import { getPrinters, getDeviceConfig, generateFingerprint } from '@/services/printerService'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
+const printerPort = ref(8000)
 
 const currentTemplate = reactive({
   id: '',
@@ -194,14 +195,9 @@ const scriptLoaded = ref(false)
 const scriptLoading = ref(false)
 const loadError = ref('')
 
-const getPrinterUrl = (printer) => {
-  if (!printer) return ''
-  return printer.url || printer.host || ''
-}
-
-const loadLodopScript = (printerUrl) => {
+const loadLodopScript = (port) => {
   return new Promise((resolve, reject) => {
-    const scriptUrl = `${printerUrl}/CLodopfuncs.js`
+    const scriptUrl = `http://127.0.0.1:${port}/CLodopfuncs.js`
     
     const existingScript = document.querySelector('script[data-lodop]')
     if (existingScript) {
@@ -221,15 +217,19 @@ const loadLodopScript = (printerUrl) => {
   })
 }
 
+const loadPrinterConfig = async () => {
+  try {
+    const result = await getDeviceConfig()
+    if (result.success) {
+      printerPort.value = result.data.port || 8000
+    }
+  } catch (err) {
+    console.error('加载打印机配置失败:', err)
+  }
+}
+
 const onPrinterChange = async () => {
   if (!selectedPrinter.value) {
-    scriptLoaded.value = false
-    loadError.value = ''
-    return
-  }
-  
-  const printerUrl = getPrinterUrl(selectedPrinter.value)
-  if (!printerUrl) {
     scriptLoaded.value = false
     loadError.value = ''
     return
@@ -239,7 +239,7 @@ const onPrinterChange = async () => {
   loadError.value = ''
   
   try {
-    await loadLodopScript(printerUrl)
+    await loadLodopScript(printerPort.value)
     
     scriptLoaded.value = typeof window.getCLodop !== 'undefined'
     if (!scriptLoaded.value) {
@@ -419,14 +419,14 @@ const previewTemplate = () => {
   }
   
   if (!scriptLoaded.value) {
-    alert('打印控件尚未加载完成，请等待加载成功后再预览')
+    alert('打印控件尚未加载成功，请确保Lodop服务已运行')
     return
   }
   
   try {
     const LODOP = window.getCLodop()
     if (!LODOP) {
-      alert('打印控件未加载，请确保C-LODOP服务已启动')
+      alert('打印控件未加载，请确保Lodop服务已运行')
       return
     }
     
@@ -455,6 +455,7 @@ const previewTemplate = () => {
 }
 
 onMounted(() => {
+  loadPrinterConfig()
   fetchPrinters()
   
   const params = new URLSearchParams(window.location.search)
@@ -554,10 +555,6 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.full-width {
-  width: 100%;
-}
-
 .editor-main {
   display: flex;
   flex: 1;
@@ -566,150 +563,111 @@ onMounted(() => {
 
 .editor-sidebar {
   width: 300px;
-  flex-shrink: 0;
+  min-width: 300px;
   background: #2d2d2d;
-  padding: 16px;
-  overflow-y: auto;
   border-right: 1px solid #3d3d3d;
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .section h3 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
   color: #ffffff;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #3d3d3d;
 }
 
-.form-group, .property-group {
-  margin-bottom: 12px;
+.form-group {
+  margin-bottom: 16px;
 }
 
-.form-group label, .property-group label {
+.form-group label {
   display: block;
-  margin-bottom: 4px;
-  font-size: 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
   color: #999;
 }
 
 .form-control {
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 12px;
   background: #1a1a1a;
   border: 1px solid #3d3d3d;
-  border-radius: 4px;
+  border-radius: 6px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
+  outline: none;
   box-sizing: border-box;
 }
 
 .form-control:focus {
-  outline: none;
   border-color: #00d8ff;
 }
 
 .form-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
-.form-row .form-group, .form-row .property-group {
+.form-row .form-group {
   flex: 1;
-}
-
-.widget-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.widget-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background: #1a1a1a;
-  border: 1px solid #3d3d3d;
-  border-radius: 4px;
-  cursor: grab;
-  transition: all 0.2s;
-}
-
-.widget-item:hover {
-  border-color: #00d8ff;
-  background: #252525;
-}
-
-.widget-item:active {
-  cursor: grabbing;
-}
-
-.widget-icon {
-  font-size: 16px;
 }
 
 .printer-info {
   margin-top: 12px;
-  padding: 10px;
-  background: #1a1a1a;
-  border-radius: 4px;
-  font-size: 12px;
 }
 
 .printer-info p {
-  margin: 4px 0;
-  color: #999;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #e0e0e0;
 }
 
 .printer-info code {
-  display: block;
-  margin-top: 4px;
-  padding: 6px;
-  background: #0d0d0d;
+  background: #1a1a1a;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 11px;
   color: #00d8ff;
-  word-break: break-all;
-}
-
-.mb-2 {
-  margin-bottom: 8px;
+  font-size: 12px;
 }
 
 .loading-status {
-  margin-top: 10px;
-  padding: 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .loading-status.loading {
-  background: #1a3a5c;
+  background: rgba(0, 216, 255, 0.1);
   color: #00d8ff;
 }
 
 .loading-status.success {
-  background: #1a4a2a;
-  color: #4ade80;
+  background: rgba(46, 213, 115, 0.1);
+  color: #2ed573;
 }
 
 .loading-status.error {
-  background: #4a1a1a;
-  color: #f87171;
+  background: rgba(255, 71, 87, 0.1);
+  color: #ff4757;
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #00d8ff;
-  border-top-color: transparent;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -718,50 +676,101 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
+.widget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #1a1a1a;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.widget-item:hover {
+  border-color: #00d8ff;
+  background: rgba(0, 216, 255, 0.1);
+}
+
+.widget-item:active {
+  cursor: grabbing;
+}
+
+.widget-icon {
+  font-size: 20px;
+}
+
 .widget-name {
-  font-size: 13px;
+  font-size: 14px;
   color: #e0e0e0;
+}
+
+.property-group {
+  margin-bottom: 12px;
+}
+
+.property-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #999;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
 }
 
 .editor-canvas {
   flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-  background: #1a1a1a;
-  padding: 20px;
+  justify-content: center;
+  padding: 40px;
+  overflow: auto;
 }
 
 .canvas-container {
-  position: relative;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .virtual-paper {
   background: white;
-  border: 1px solid #ccc;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
-  overflow: hidden;
-  min-width: 100px;
-  min-height: 100px;
+  flex-shrink: 0;
 }
 
 .control-item {
   position: absolute;
-  background: rgba(0, 131, 199, 0.1);
-  border: 1px dashed #0083c7;
-  border-radius: 3px;
-  padding: 2px 4px;
-  overflow: hidden;
+  border: 2px solid transparent;
   box-sizing: border-box;
-  user-select: none;
-  white-space: nowrap;
-  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+.control-item:hover {
+  border-color: rgba(0, 216, 255, 0.5);
 }
 
 .control-item.selected {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
+  border-color: #00d8ff;
+  box-shadow: 0 0 0 2px rgba(0, 216, 255, 0.3);
 }
 </style>

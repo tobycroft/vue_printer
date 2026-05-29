@@ -5,6 +5,7 @@ import UserInfo from '../views/admin/UserInfo.vue'
 import About from '../views/admin/About.vue'
 import Help from '../views/admin/Help.vue'
 import Printers from '../views/admin/Printers.vue'
+import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
 import TemplateEditor from '../views/admin/TemplateEditor.vue'
 
@@ -30,6 +31,18 @@ const routes = [
         meta: { title: '用户信息' }
       },
       {
+        path: 'local-printers',
+        name: 'LocalPrinters',
+        component: LocalPrinters,
+        meta: { title: '本地打印机' }
+      },
+      {
+        path: 'printers',
+        name: 'Printers',
+        component: Printers,
+        meta: { title: '所有打印机' }
+      },
+      {
         path: 'templates',
         name: 'Templates',
         component: Templates,
@@ -46,12 +59,6 @@ const routes = [
         name: 'Help',
         component: Help,
         meta: { title: '帮助' }
-      },
-      {
-        path: 'printers',
-        name: 'Printers',
-        component: Printers,
-        meta: { title: '打印机管理' }
       }
     ]
   },
