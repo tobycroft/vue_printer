@@ -45,18 +45,8 @@
         </div>
 
         <div class="section">
-          <h3>选择打印机</h3>
-          <div class="form-group">
-            <button class="btn btn-secondary btn-sm full-width mb-2" @click="fetchPrinters">刷新列表</button>
-            <select v-model="selectedPrinterId" @change="onPrinterChange" class="form-control">
-              <option value="">请选择打印机</option>
-              <option v-for="printer in printers" :key="printer.id" :value="printer.id">
-                {{ printer.device_name }} ({{ printer.computer_name }})
-              </option>
-            </select>
-          </div>
-          <div v-if="selectedPrinter" class="printer-info">
-            <p>已选打印机: {{ selectedPrinter.device_name }}</p>
+          <h3>打印控件</h3>
+          <div class="printer-info">
             <p>Lodop地址: <code>http://127.0.0.1:{{ printerPort }}/CLodopfuncs.js</code></p>
             <div v-if="scriptLoading" class="loading-status loading">
               <span class="spinner"></span> 正在加载打印控件...
@@ -66,6 +56,7 @@
             </div>
             <div v-else-if="loadError" class="loading-status error">
               ✗ {{ loadError }}
+              <button class="btn btn-secondary btn-sm mt-2" @click="loadLodopScript">重试</button>
             </div>
           </div>
         </div>
@@ -157,7 +148,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storageService } from '@/services/storageService'
-import { getPrinters, getDeviceConfig, generateFingerprint } from '@/services/printerService'
+import { getDeviceConfig } from '@/services/printerService'
 
 const isEditing = ref(false)
 const paperPreset = ref('')
@@ -176,9 +167,6 @@ const draggedWidget = ref(null)
 const draggingControl = ref(null)
 const dragOffset = reactive({ x: 0, y: 0 })
 
-const printers = ref([])
-const selectedPrinterId = ref('')
-
 const availableWidgets = [
   { type: 'text', name: '文本框', icon: '📝' },
   { type: 'rect', name: '矩形框', icon: '⬜' },
@@ -187,17 +175,16 @@ const availableWidgets = [
   { type: 'qrcode', name: '二维码', icon: '🟆' }
 ]
 
-const selectedPrinter = computed(() => {
-  return printers.value.find(p => p.id === selectedPrinterId.value)
-})
-
 const scriptLoaded = ref(false)
 const scriptLoading = ref(false)
 const loadError = ref('')
 
-const loadLodopScript = (port) => {
-  return new Promise((resolve, reject) => {
-    const scriptUrl = `http://127.0.0.1:${port}/CLodopfuncs.js`
+const loadLodopScript = async () => {
+  scriptLoading.value = true
+  loadError.value = ''
+  
+  try {
+    const scriptUrl = `http://127.0.0.1:${printerPort.value}/CLodopfuncs.js`
     
     const existingScript = document.querySelector('script[data-lodop]')
     if (existingScript) {
@@ -207,39 +194,16 @@ const loadLodopScript = (port) => {
     const script = document.createElement('script')
     script.setAttribute('data-lodop', 'true')
     script.setAttribute('src', scriptUrl)
-    script.onload = () => {
-      resolve()
-    }
-    script.onerror = () => {
-      reject(new Error('加载CLodop脚本失败'))
-    }
-    document.head.appendChild(script)
-  })
-}
-
-const loadPrinterConfig = async () => {
-  try {
-    const result = await getDeviceConfig()
-    if (result.success) {
-      printerPort.value = result.data.port || 8000
-    }
-  } catch (err) {
-    console.error('加载打印机配置失败:', err)
-  }
-}
-
-const onPrinterChange = async () => {
-  if (!selectedPrinter.value) {
-    scriptLoaded.value = false
-    loadError.value = ''
-    return
-  }
-  
-  scriptLoading.value = true
-  loadError.value = ''
-  
-  try {
-    await loadLodopScript(printerPort.value)
+    
+    await new Promise((resolve, reject) => {
+      script.onload = () => {
+        resolve()
+      }
+      script.onerror = () => {
+        reject(new Error('加载CLodop脚本失败'))
+      }
+      document.head.appendChild(script)
+    })
     
     scriptLoaded.value = typeof window.getCLodop !== 'undefined'
     if (!scriptLoaded.value) {
@@ -254,17 +218,14 @@ const onPrinterChange = async () => {
   }
 }
 
-const fetchPrinters = async () => {
+const loadPrinterConfig = async () => {
   try {
-    const result = await getPrinters()
+    const result = await getDeviceConfig()
     if (result.success) {
-      printers.value = result.data
-    } else {
-      alert(result.message || '获取打印机列表失败')
+      printerPort.value = result.data.port || 8000
     }
-  } catch (error) {
-    console.error('获取打印机列表失败:', error)
-    alert('获取打印机列表失败')
+  } catch (err) {
+    console.error('加载打印机配置失败:', err)
   }
 }
 
@@ -413,11 +374,6 @@ const saveTemplate = async () => {
 }
 
 const previewTemplate = () => {
-  if (!selectedPrinter.value) {
-    alert('请先选择打印机')
-    return
-  }
-  
   if (!scriptLoaded.value) {
     alert('打印控件尚未加载成功，请确保Lodop服务已运行')
     return
@@ -454,9 +410,9 @@ const previewTemplate = () => {
   }
 }
 
-onMounted(() => {
-  loadPrinterConfig()
-  fetchPrinters()
+onMounted(async () => {
+  await loadPrinterConfig()
+  await loadLodopScript()
   
   const params = new URLSearchParams(window.location.search)
   const templateId = params.get('id')
@@ -728,8 +684,8 @@ onMounted(() => {
   width: 100%;
 }
 
-.mb-2 {
-  margin-bottom: 8px;
+.mt-2 {
+  margin-top: 8px;
 }
 
 .editor-canvas {
