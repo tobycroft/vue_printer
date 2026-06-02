@@ -338,9 +338,12 @@ const calculateControlSize = (control) => {
   tempDiv.style.fontWeight = control.fontWeight
   tempDiv.style.fontFamily = 'Arial, sans-serif'
   tempDiv.style.whiteSpace = 'nowrap'
-  tempDiv.style.padding = '4px'
+  tempDiv.style.padding = '6px 8px'
   tempDiv.style.margin = '0'
   tempDiv.style.boxSizing = 'border-box'
+  tempDiv.style.display = 'flex'
+  tempDiv.style.alignItems = 'center'
+  tempDiv.style.justifyContent = 'center'
   tempDiv.textContent = control.text || '文本内容'
   
   document.body.appendChild(tempDiv)
@@ -349,8 +352,9 @@ const calculateControlSize = (control) => {
   document.body.removeChild(tempDiv)
   
   // 转换为 mm (近似值，1mm ≈ 3.78px)
-  control.width = Math.max(20, Math.ceil(textWidth / 3.78))
-  control.height = Math.max(10, Math.ceil(textHeight / 3.78))
+  // 增加额外的缓冲空间，确保文字不会被截断
+  control.width = Math.max(20, Math.ceil(textWidth / 3.78) + 4)
+  control.height = Math.max(10, Math.ceil(textHeight / 3.78) + 3)
 }
 
 const onDrop = (event) => {
@@ -838,8 +842,10 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   font-family: Arial, sans-serif;
+  padding: 2px 4px;
+  line-height: 1.2;
 }
 
 .control-item:hover {
