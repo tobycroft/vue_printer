@@ -243,9 +243,11 @@ const fetchPrinters = async () => {
 
   try {
     const result = await getLocalDevices()
+    console.log('fetchPrinters result:', result)
     
     if (result.success) {
       printers.value = result.data
+      console.log('printers:', printers.value)
     } else {
       error.value = result.message || '获取打印机列表失败'
     }
@@ -284,21 +286,23 @@ const addPrinter = async () => {
 }
 
 const editPrinter = (printer) => {
+  console.log('editPrinter called with:', printer)
   editingPrinterId.value = printer.id
-  editForm.deviceName = printer.deviceName
-  editForm.remark = printer.remark
+  editForm.deviceName = printer.deviceName || printer.DeviceName || ''
+  editForm.remark = printer.remark || printer.Remark || ''
+  console.log('editForm after:', editForm)
   showEditModal.value = true
 }
 
 const updatePrinter = async () => {
-  if (!editForm.deviceName) {
+  if (!editForm.deviceName || !editForm.deviceName.trim()) {
     alert('请输入打印机名称')
     return
   }
 
   updating.value = true
   try {
-    const result = await updateLocalDevice(editingPrinterId.value, editForm.deviceName, editForm.remark)
+    const result = await updateLocalDevice(editingPrinterId.value, editForm.deviceName.trim(), (editForm.remark || '').trim())
     if (result.success) {
       alert('更新成功')
       showEditModal.value = false
