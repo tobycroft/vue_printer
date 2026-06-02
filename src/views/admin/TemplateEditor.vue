@@ -153,6 +153,11 @@
               @mousedown.stop="startDragControl($event, control)"
             >
               {{ control.text || '文本内容' }}
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle"
+                @mousedown.stop="startResizeControl($event, control)"
+              ></div>
             </div>
           </div>
         </div>
@@ -181,7 +186,15 @@ const currentTemplate = reactive({
 const selectedControl = ref(null)
 const draggedWidget = ref(null)
 const draggingControl = ref(null)
+const resizingControl = ref(null)
 const dragOffset = reactive({ x: 0, y: 0 })
+const resizeStartData = reactive({
+  initialWidth: 0,
+  initialHeight: 0,
+  initialFontSize: 0,
+  startX: 0,
+  startY: 0
+})
 
 // 监听选中控件的属性变化，自动调整大小
 watch(
@@ -417,6 +430,49 @@ const stopDragControl = () => {
   draggingControl.value = null
   document.removeEventListener('mousemove', onDragControl)
   document.removeEventListener('mouseup', stopDragControl)
+}
+
+const startResizeControl = (event, control) => {
+  if (control.type !== 'text') return
+  selectedControl.value = control
+  resizingControl.value = control
+  
+  resizeStartData.initialWidth = control.width
+  resizeStartData.initialHeight = control.height
+  resizeStartData.initialFontSize = control.fontSize
+  resizeStartData.startX = event.clientX
+  resizeStartData.startY = event.clientY
+  
+  document.addEventListener('mousemove', onResizeControl)
+  document.addEventListener('mouseup', stopResizeControl)
+}
+
+const onResizeControl = (event) => {
+  if (!resizingControl.value) return
+  
+  const scale = paperScale.value
+  const deltaX = (event.clientX - resizeStartData.startX) / scale
+  const deltaY = (event.clientY - resizeStartData.startY) / scale
+  
+  // 计算缩放比例，保持宽高比
+  const initialAspectRatio = resizeStartData.initialWidth / resizeStartData.initialHeight
+  const newWidth = Math.max(20, resizeStartData.initialWidth + deltaX)
+  const newHeight = Math.max(10, newWidth / initialAspectRatio)
+  
+  // 更新控件尺寸
+  resizingControl.value.width = Math.round(newWidth)
+  resizingControl.value.height = Math.round(newHeight)
+  
+  // 计算字号缩放比例
+  const widthRatio = newWidth / resizeStartData.initialWidth
+  const newFontSize = Math.max(8, Math.min(72, resizeStartData.initialFontSize * widthRatio))
+  resizingControl.value.fontSize = Math.round(newFontSize)
+}
+
+const stopResizeControl = () => {
+  resizingControl.value = null
+  document.removeEventListener('mousemove', onResizeControl)
+  document.removeEventListener('mouseup', stopResizeControl)
 }
 
 const saveTemplate = async () => {
@@ -793,5 +849,26 @@ onMounted(async () => {
 .control-item.selected {
   border-color: #00d8ff;
   box-shadow: 0 0 0 2px rgba(0, 216, 255, 0.3);
+}
+
+.resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #00d8ff;
+  border: 2px solid white;
+  border-radius: 2px;
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.resize-handle:hover {
+  background: #00b8e6;
+  transform: scale(1.1);
+  transition: transform 0.1s ease;
 }
 </style>
