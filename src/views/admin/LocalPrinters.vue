@@ -98,6 +98,10 @@
             <input id="device-name" v-model="addForm.deviceName" type="text" placeholder="请输入打印机名称" class="form-control" />
           </div>
           <div class="form-group">
+            <label for="device-computer-name">电脑名</label>
+            <input id="device-computer-name" v-model="addForm.computerName" type="text" placeholder="我的电脑" class="form-control" />
+          </div>
+          <div class="form-group">
             <label for="device-remark">备注</label>
             <input id="device-remark" v-model="addForm.remark" type="text" placeholder="可选" class="form-control" />
           </div>
@@ -121,6 +125,10 @@
           <div class="form-group">
             <label for="edit-device-name">打印机名称</label>
             <input id="edit-device-name" v-model="editForm.deviceName" type="text" placeholder="请输入打印机名称" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="edit-device-computer-name">电脑名</label>
+            <input id="edit-device-computer-name" v-model="editForm.computerName" type="text" placeholder="我的电脑" class="form-control" />
           </div>
           <div class="form-group">
             <label for="edit-device-remark">备注</label>
@@ -157,11 +165,13 @@ const editingPrinterId = ref(null)
 
 const addForm = reactive({
   deviceName: '',
+  computerName: '我的电脑',
   remark: ''
 })
 
 const editForm = reactive({
   deviceName: '',
+  computerName: '',
   remark: ''
 })
 
@@ -265,11 +275,16 @@ const addPrinter = async () => {
 
   adding.value = true
   try {
-    const result = await addLocalDevice(addForm.deviceName.trim(), addForm.remark.trim())
+    const result = await addLocalDevice(
+      addForm.deviceName.trim(), 
+      addForm.remark.trim(),
+      addForm.computerName.trim() || '我的电脑'
+    )
     if (result.success) {
       alert('添加打印机成功')
       showAddModal.value = false
       addForm.deviceName = ''
+      addForm.computerName = '我的电脑'
       addForm.remark = ''
       await fetchPrinters()
     } else {
@@ -286,6 +301,7 @@ const addPrinter = async () => {
 const editPrinter = (printer) => {
   editingPrinterId.value = printer.id
   editForm.deviceName = printer.device_name || ''
+  editForm.computerName = printer.computer_name || ''
   editForm.remark = printer.remark || ''
   showEditModal.value = true
 }
@@ -298,7 +314,12 @@ const updatePrinter = async () => {
 
   updating.value = true
   try {
-    const result = await updateLocalDevice(editingPrinterId.value, editForm.deviceName.trim(), (editForm.remark || '').trim())
+    const result = await updateLocalDevice(
+      editingPrinterId.value, 
+      editForm.deviceName.trim(), 
+      editForm.remark.trim(),
+      editForm.computerName.trim()
+    )
     if (result.success) {
       alert('更新成功')
       showEditModal.value = false

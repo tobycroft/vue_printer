@@ -47,7 +47,7 @@ const routes = [
         path: 'templates',
         name: 'Templates',
         component: Templates,
-        meta: { title: '打印模板管理 将会自动连接本地端口' }
+        meta: { title: '打印模板管理' }
       },
       {
         path: 'system-settings',

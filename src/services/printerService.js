@@ -206,15 +206,14 @@ export async function getLocalDevices() {
   }
 }
 
-export async function addLocalDevice(deviceName, remark) {
+export async function addLocalDevice(deviceName, remark, computerName) {
   try {
     const headers = await getAuthHeaders()
     const fingerprint = generateFingerprint()
-    const computerName = getComputerName()
     const formData = new FormData()
     formData.append('device_name', deviceName)
     formData.append('fingerprint', fingerprint)
-    formData.append('computer_name', computerName)
+    formData.append('computer_name', computerName || '我的电脑')
     if (remark) {
       formData.append('remark', remark)
     }
@@ -271,13 +270,16 @@ export async function deleteLocalDevice(id) {
   }
 }
 
-export async function updateLocalDevice(id, deviceName, remark) {
+export async function updateLocalDevice(id, deviceName, remark, computerName) {
   try {
     const headers = await getAuthHeaders()
     const formData = new FormData()
     formData.append('id', id)
     formData.append('device_name', deviceName)
     formData.append('remark', remark)
+    if (computerName) {
+      formData.append('computer_name', computerName)
+    }
 
     const response = await requestWithForm('/v1/device/info/update', formData, headers)
 
