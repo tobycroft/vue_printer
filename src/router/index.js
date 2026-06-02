@@ -46,7 +46,7 @@ const routes = [
         path: 'templates',
         name: 'Templates',
         component: Templates,
-        meta: { title: '打印模板管理' }
+        meta: { title: '打印模板管理 将会使用本地打印机中设定的端口' }
       },
       {
         path: 'about',
