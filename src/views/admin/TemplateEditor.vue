@@ -411,13 +411,19 @@ const onDrop = (event) => {
   const rect = paper.getBoundingClientRect()
   const x = (event.clientX - rect.left) / paperScale.value
   const y = (event.clientY - rect.top) / paperScale.value
+  
+  // 默认宽度是纸张宽度的90%
+  const defaultWidth = draggedWidget.value.type === 'text' 
+    ? Math.round(currentTemplate.paperWidth * 0.9)
+    : 80
+  
   const newControl = {
     id: Date.now().toString(),
     type: draggedWidget.value.type,
     x: Math.round(x),
     y: Math.round(y),
-    width: draggedWidget.value.type === 'text' ? 100 : 80,
-    height: draggedWidget.value.type === 'text' ? 25 : (draggedWidget.value.type === 'line' ? 2 : 60),
+    width: defaultWidth,
+    height: draggedWidget.value.type === 'text' ? 30 : (draggedWidget.value.type === 'line' ? 2 : 60),
     text: '',
     fontSize: 12,
     fontWeight: 'normal',
@@ -427,9 +433,8 @@ const onDrop = (event) => {
     borderColor: '#000000'
   }
   
-  if (newControl.type === 'text') {
-    calculateControlSize(newControl)
-  }
+  // 新创建的文本框保持默认大小，不自动调整
+  // 用户输入文本或调整字号时才会自动调整
   
   currentTemplate.controls.push(newControl)
   selectedControl.value = newControl
