@@ -243,11 +243,9 @@ const fetchPrinters = async () => {
 
   try {
     const result = await getLocalDevices()
-    console.log('fetchPrinters result:', result)
     
     if (result.success) {
       printers.value = result.data
-      console.log('printers:', printers.value)
     } else {
       error.value = result.message || '获取打印机列表失败'
     }
@@ -286,11 +284,9 @@ const addPrinter = async () => {
 }
 
 const editPrinter = (printer) => {
-  console.log('editPrinter called with:', printer)
   editingPrinterId.value = printer.id
-  editForm.deviceName = printer.deviceName || printer.DeviceName || ''
-  editForm.remark = printer.remark || printer.Remark || ''
-  console.log('editForm after:', editForm)
+  editForm.deviceName = printer.device_name || ''
+  editForm.remark = printer.remark || ''
   showEditModal.value = true
 }
 
