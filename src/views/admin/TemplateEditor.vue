@@ -228,6 +228,12 @@ const currentTemplate = reactive({
   controls: []
 })
 
+// 保存原始纸张尺寸，用于计算缩放比例
+const originalPaperSize = reactive({
+  width: 210,
+  height: 297
+})
+
 const selectedControl = ref(null)
 const draggedWidget = ref(null)
 const draggingControl = ref(null)
@@ -251,6 +257,42 @@ watch(
     if (newControl) {
       // 保存之前的引用，用于监听属性变化
     }
+  }
+)
+
+// 监听纸张尺寸变化，按比例缩放所有控件
+let isPresetChanging = false
+
+watch(
+  [() => currentTemplate.paperWidth, () => currentTemplate.paperHeight],
+  ([newWidth, newHeight], [oldWidth, oldHeight]) => {
+    // 如果是预设切换触发的，已经处理过了，跳过
+    if (isPresetChanging) {
+      isPresetChanging = false
+      return
+    }
+    
+    // 如果只是初始加载或相同值，不处理
+    if (!oldWidth || !oldHeight || (newWidth === oldWidth && newHeight === oldHeight)) {
+      return
+    }
+    
+    // 计算缩放比例
+    const scaleX = newWidth / oldWidth
+    const scaleY = newHeight / oldHeight
+    
+    // 按比例缩放所有控件
+    currentTemplate.controls.forEach(control => {
+      control.x = Math.round(control.x * scaleX)
+      control.y = Math.round(control.y * scaleY)
+      control.width = Math.max(20, Math.round(control.width * scaleX))
+      control.height = Math.max(10, Math.round(control.height * scaleY))
+      
+      // 如果是文本控件，字号也按比例缩放
+      if (control.type === 'text' && control.fontSize) {
+        control.fontSize = Math.max(8, Math.min(72, Math.round(control.fontSize * scaleX)))
+      }
+    })
   }
 )
 
@@ -363,8 +405,34 @@ const applyPaperPreset = () => {
     'BusinessCard': { width: 90, height: 54 }
   }
   if (presets[paperPreset.value]) {
-    currentTemplate.paperWidth = presets[paperPreset.value].width
-    currentTemplate.paperHeight = presets[paperPreset.value].height
+    const oldWidth = currentTemplate.paperWidth
+    const oldHeight = currentTemplate.paperHeight
+    const newWidth = presets[paperPreset.value].width
+    const newHeight = presets[paperPreset.value].height
+    
+    // 计算缩放比例
+    const scaleX = newWidth / oldWidth
+    const scaleY = newHeight / oldHeight
+    
+    // 设置标志，避免 watch 重复处理
+    isPresetChanging = true
+    
+    // 更新纸张尺寸
+    currentTemplate.paperWidth = newWidth
+    currentTemplate.paperHeight = newHeight
+    
+    // 按比例缩放所有控件
+    currentTemplate.controls.forEach(control => {
+      control.x = Math.round(control.x * scaleX)
+      control.y = Math.round(control.y * scaleY)
+      control.width = Math.max(20, Math.round(control.width * scaleX))
+      control.height = Math.max(10, Math.round(control.height * scaleY))
+      
+      // 如果是文本控件，字号也按比例缩放
+      if (control.type === 'text' && control.fontSize) {
+        control.fontSize = Math.max(8, Math.min(72, Math.round(control.fontSize * scaleX)))
+      }
+    })
   }
 }
 
