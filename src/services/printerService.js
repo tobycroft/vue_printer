@@ -183,7 +183,7 @@ export async function getLocalDevices() {
     const formData = new FormData()
     formData.append('fingerprint', fingerprint)
 
-    const response = await requestWithForm('/v1/device/config/device/list', formData, headers)
+    const response = await requestWithForm('/v1/device/info/list', formData, headers)
 
     if (response.code === 0) {
       return {
@@ -219,7 +219,7 @@ export async function addLocalDevice(deviceName, remark) {
       formData.append('remark', remark)
     }
 
-    const response = await requestWithForm('/v1/device/config/device/add', formData, headers)
+    const response = await requestWithForm('/v1/device/info/add', formData, headers)
 
     if (response.code === 0) {
       return {
@@ -248,7 +248,7 @@ export async function deleteLocalDevice(id) {
     const formData = new FormData()
     formData.append('id', id)
 
-    const response = await requestWithForm('/v1/device/config/device/delete', formData, headers)
+    const response = await requestWithForm('/v1/device/info/delete', formData, headers)
 
     if (response.code === 0) {
       return {
@@ -279,7 +279,7 @@ export async function updateLocalDevice(id, deviceName, remark) {
     formData.append('device_name', deviceName)
     formData.append('remark', remark)
 
-    const response = await requestWithForm('/v1/device/config/device/update', formData, headers)
+    const response = await requestWithForm('/v1/device/info/update', formData, headers)
 
     if (response.code === 0) {
       return {
