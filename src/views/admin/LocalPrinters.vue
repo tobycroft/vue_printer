@@ -85,6 +85,10 @@
         <p>暂无本地打印机</p>
         <button class="btn btn-primary" @click="fetchPrinters">刷新</button>
       </div>
+      
+      <div class="printers-notice">
+        <p>💡 正常情况下，你只需要添加一个打印机即可。因为本插件目前仅支持一台电脑配置一台打印机，如果需要一台电脑配置多个打印机的话，这个功能会考虑在未来更新，但是暂时因为没人提，所以我就简单的做1对1的，所以这里虽然能新增多个打印机，但其实添加一台就好，因为添加多了只是能有多个名字，仅此而已。</p>
+      </div>
     </div>
 
     <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
@@ -665,6 +669,21 @@ onMounted(() => {
   margin: 0 0 20px 0;
   color: #999;
   font-size: 16px;
+}
+
+.printers-notice {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+}
+
+.printers-notice p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #ffe082;
 }
 
 .modal-overlay {
