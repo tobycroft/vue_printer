@@ -91,14 +91,24 @@
           <div class="form-row">
             <div class="property-group">
               <label>字号 (pt)</label>
-              <input 
-                v-model.number="selectedControl.fontSize" 
-                type="number" 
-                min="8" 
-                max="72" 
-                class="form-control" 
-                @input="updateControlSizeOnChange(selectedControl)"
-              />
+              <div class="font-size-control">
+                <input
+                  v-model.number="selectedControl.fontSize"
+                  type="number"
+                  min="8"
+                  max="72"
+                  class="form-control"
+                  @input="updateControlSizeOnChange(selectedControl)"
+                />
+                <input
+                  v-model.number="selectedControl.fontSize"
+                  type="range"
+                  min="8"
+                  max="72"
+                  class="form-slider"
+                  @input="updateControlSizeOnChange(selectedControl)"
+                />
+              </div>
             </div>
             <div class="property-group">
               <label>对齐</label>
@@ -521,16 +531,11 @@ const onResizeControl = (event) => {
     newY = resizeStartData.initialY + deltaY
   }
   
-  // 更新控件尺寸和位置
+  // 更新控件尺寸和位置，字号不自动变化
   resizingControl.value.width = Math.round(newWidth)
   resizingControl.value.height = Math.round(newHeight)
   if (direction.includes('w')) resizingControl.value.x = Math.round(newX)
   if (direction.includes('n')) resizingControl.value.y = Math.round(newY)
-  
-  // 计算宽度方向的缩放比例，用于调整字号
-  const widthRatio = newWidth / resizeStartData.initialWidth
-  const newFontSize = Math.max(8, Math.min(72, resizeStartData.initialFontSize * widthRatio))
-  resizingControl.value.fontSize = Math.round(newFontSize)
 }
 
 const stopResizeControl = () => {
@@ -863,6 +868,56 @@ onMounted(async () => {
   font-size: 13px;
   font-weight: 500;
   color: #999;
+}
+
+.font-size-control {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.font-size-control .form-control {
+  flex: 0 0 60px;
+}
+
+.form-slider {
+  flex: 1;
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #3d3d3d;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.form-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #00d8ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
+}
+
+.form-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.form-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #00d8ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
 }
 
 .full-width {
