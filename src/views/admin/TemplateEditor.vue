@@ -81,12 +81,24 @@
           <h3>控件属性</h3>
           <div class="property-group">
             <label>文本内容</label>
-            <input v-model="selectedControl.text" type="text" class="form-control" />
+            <input 
+              v-model="selectedControl.text" 
+              type="text" 
+              class="form-control" 
+              @input="updateControlSizeOnChange(selectedControl)"
+            />
           </div>
           <div class="form-row">
             <div class="property-group">
               <label>字号 (pt)</label>
-              <input v-model.number="selectedControl.fontSize" type="number" min="8" max="72" class="form-control" />
+              <input 
+                v-model.number="selectedControl.fontSize" 
+                type="number" 
+                min="8" 
+                max="72" 
+                class="form-control" 
+                @input="updateControlSizeOnChange(selectedControl)"
+              />
             </div>
             <div class="property-group">
               <label>对齐</label>
@@ -99,7 +111,11 @@
           </div>
           <div class="property-group">
             <label>字体粗细</label>
-            <select v-model="selectedControl.fontWeight" class="form-control">
+            <select 
+              v-model="selectedControl.fontWeight" 
+              class="form-control"
+              @change="updateControlSizeOnChange(selectedControl)"
+            >
               <option value="normal">正常</option>
               <option value="bold">粗体</option>
             </select>
@@ -146,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getDeviceConfig } from '@/services/printerService'
 
@@ -166,6 +182,22 @@ const selectedControl = ref(null)
 const draggedWidget = ref(null)
 const draggingControl = ref(null)
 const dragOffset = reactive({ x: 0, y: 0 })
+
+// 监听选中控件的属性变化，自动调整大小
+watch(
+  () => selectedControl.value,
+  (newControl) => {
+    if (newControl) {
+      // 保存之前的引用，用于监听属性变化
+    }
+  }
+)
+
+// 当字号、文本或字体粗细变化时，自动调整控件大小
+const updateControlSizeOnChange = (control) => {
+  if (!control || control.type !== 'text') return
+  calculateControlSize(control)
+}
 
 const availableWidgets = [
   { type: 'text', name: '文本框', icon: '📝' },
@@ -280,6 +312,34 @@ const onDragStart = (event, widget) => {
   event.dataTransfer.effectAllowed = 'copy'
 }
 
+const calculateControlSize = (control) => {
+  if (control.type !== 'text') return
+  
+  // 创建临时元素测量文本大小
+  const tempDiv = document.createElement('div')
+  tempDiv.style.position = 'absolute'
+  tempDiv.style.visibility = 'hidden'
+  tempDiv.style.pointerEvents = 'none'
+  // 将 pt 转换为 px (1pt = 1.333px)
+  tempDiv.style.fontSize = `${control.fontSize * 1.333}px`
+  tempDiv.style.fontWeight = control.fontWeight
+  tempDiv.style.fontFamily = 'Arial, sans-serif'
+  tempDiv.style.whiteSpace = 'nowrap'
+  tempDiv.style.padding = '4px'
+  tempDiv.style.margin = '0'
+  tempDiv.style.boxSizing = 'border-box'
+  tempDiv.textContent = control.text || '文本内容'
+  
+  document.body.appendChild(tempDiv)
+  const textWidth = tempDiv.offsetWidth
+  const textHeight = tempDiv.offsetHeight
+  document.body.removeChild(tempDiv)
+  
+  // 转换为 mm (近似值，1mm ≈ 3.78px)
+  control.width = Math.max(20, Math.ceil(textWidth / 3.78))
+  control.height = Math.max(10, Math.ceil(textHeight / 3.78))
+}
+
 const onDrop = (event) => {
   if (!draggedWidget.value) return
   const paper = event.currentTarget
@@ -301,6 +361,11 @@ const onDrop = (event) => {
     borderWidth: 1,
     borderColor: '#000000'
   }
+  
+  if (newControl.type === 'text') {
+    calculateControlSize(newControl)
+  }
+  
   currentTemplate.controls.push(newControl)
   selectedControl.value = newControl
   draggedWidget.value = null
