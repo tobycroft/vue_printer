@@ -43,6 +43,9 @@
             <span class="value">{{ printer.remark }}</span>
           </div>
         </div>
+        <div class="printer-actions">
+          <button class="btn btn-danger btn-sm" @click="deletePrinterConfirm(printer.id, printer.device_name)">删除</button>
+        </div>
       </div>
     </div>
 
@@ -55,7 +58,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getPrinters } from '@/services/printerService'
+import { getPrinters, deletePrinter } from '@/services/printerService'
 
 const loading = ref(false)
 const error = ref(null)
@@ -89,6 +92,25 @@ const fetchPrinters = async () => {
     error.value = '网络请求失败，请检查网络连接'
   } finally {
     loading.value = false
+  }
+}
+
+const deletePrinterConfirm = async (id, name) => {
+  if (!confirm(`确定要删除打印机「${name}」吗？`)) {
+    return
+  }
+
+  try {
+    const result = await deletePrinter(id)
+    if (result.success) {
+      alert('删除成功')
+      await fetchPrinters()
+    } else {
+      alert(result.message || '删除失败')
+    }
+  } catch (err) {
+    console.error('删除打印机失败:', err)
+    alert('网络请求失败，请检查网络连接')
   }
 }
 
@@ -236,6 +258,44 @@ onMounted(() => {
 .info-item .value {
   color: #ffffff;
   font-weight: 500;
+}
+
+.printer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.btn-danger {
+  background: #ff4757;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #ff3742;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: #00d8ff;
+  color: #1a1a1a;
+}
+
+.btn-primary:hover {
+  background: #00b8e6;
 }
 
 .no-printers {

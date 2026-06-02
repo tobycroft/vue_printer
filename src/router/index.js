@@ -7,6 +7,7 @@ import Help from '../views/admin/Help.vue'
 import Printers from '../views/admin/Printers.vue'
 import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
+import SystemSettings from '../views/admin/SystemSettings.vue'
 import TemplateEditor from '../views/admin/TemplateEditor.vue'
 
 const routes = [
@@ -46,7 +47,13 @@ const routes = [
         path: 'templates',
         name: 'Templates',
         component: Templates,
-        meta: { title: '打印模板管理 将会使用本地打印机中设定的端口' }
+        meta: { title: '打印模板管理 将会自动连接本地端口' }
+      },
+      {
+        path: 'system-settings',
+        name: 'SystemSettings',
+        component: SystemSettings,
+        meta: { title: '系统设置' }
       },
       {
         path: 'about',

@@ -1,5 +1,32 @@
 // API基础配置
-const API_BASE_URL = 'https://printapi.tuuz.ltd:444';
+const DEFAULT_API_BASE_URL = 'https://printapi.tuuz.ltd:444';
+
+function getApiBaseUrl() {
+  let url = ''
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      // 优先从 chrome.storage 读取
+      url = localStorage.getItem('api_base_url') || ''
+    }
+    if (!url) {
+      url = localStorage.getItem('api_base_url') || ''
+    }
+  } catch (error) {
+    console.error('读取API地址错误:', error)
+  }
+  return url || DEFAULT_API_BASE_URL
+}
+
+function saveApiBaseUrl(url) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ 'api_base_url': url })
+    }
+    localStorage.setItem('api_base_url', url)
+  } catch (error) {
+    console.error('保存API地址错误:', error)
+  }
+}
 
 /**
  * 通用请求方法
@@ -8,8 +35,9 @@ const API_BASE_URL = 'https://printapi.tuuz.ltd:444';
  * @returns {Promise} 响应数据
  */
 async function request(url, options = {}) {
+  const apiBaseUrl = getApiBaseUrl()
   try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await fetch(`${apiBaseUrl}${url}`, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers
@@ -38,11 +66,12 @@ async function request(url, options = {}) {
  * @returns {Promise} 响应数据
  */
 async function requestWithTimeout(url, options = {}, timeout = 10000) {
+  const apiBaseUrl = getApiBaseUrl()
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
   try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await fetch(`${apiBaseUrl}${url}`, {
       ...options,
       signal: controller.signal
     });
@@ -294,7 +323,8 @@ export async function getUserInfoDetail(uid) {
       token = authInfo.token || ''
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/user/info/get`, {
+    const apiBaseUrl = getApiBaseUrl()
+    const response = await fetch(`${apiBaseUrl}/v1/user/info/get`, {
       method: 'GET',
       headers: {
         'uid': uid,
@@ -473,7 +503,8 @@ export async function updateUserInfo(userData) {
       }
     })
 
-    const response = await fetch(`${API_BASE_URL}/v1/user/info/update`, {
+    const apiBaseUrl = getApiBaseUrl()
+    const response = await fetch(`${apiBaseUrl}/v1/user/info/update`, {
       method: 'POST',
       headers: {
         'uid': uid,
@@ -511,12 +542,13 @@ export async function updateUserInfo(userData) {
  * @param {number} timeout - 超时时间(毫秒)
  * @returns {Promise<boolean>} 是否连通
  */
-export async function checkServerConnectivity(timeout = 3000) {
+export async function checkServerConnectivity(timeout = 3000, customUrl) {
   try {
+    const apiBaseUrl = customUrl || getApiBaseUrl()
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    await fetch(API_BASE_URL, {
+    await fetch(apiBaseUrl, {
       method: 'HEAD',
       mode: 'no-cors',
       cache: 'no-cache',
@@ -530,3 +562,5 @@ export async function checkServerConnectivity(timeout = 3000) {
     return false;
   }
 }
+
+export { getApiBaseUrl, saveApiBaseUrl, DEFAULT_API_BASE_URL };

@@ -86,6 +86,35 @@ export async function getPrinters() {
   }
 }
 
+export async function deletePrinter(id) {
+  try {
+    const headers = await getAuthHeaders()
+    const formData = new FormData()
+    formData.append('id', id)
+
+    const response = await requestWithForm('/v1/device/info/delete', formData, headers)
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '删除打印机成功'
+      };
+    } else {
+      return {
+        success: false,
+        message: response.echo || '删除打印机失败'
+      };
+    }
+  } catch (error) {
+    console.error('删除打印机错误:', error);
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    };
+  }
+}
+
 export async function getDeviceConfig() {
   try {
     const headers = await getAuthHeaders()
@@ -239,6 +268,37 @@ export async function deleteLocalDevice(id) {
       success: false,
       message: error.message || '网络请求失败'
     };
+  }
+}
+
+export async function updateLocalDevice(id, deviceName, remark) {
+  try {
+    const headers = await getAuthHeaders()
+    const formData = new FormData()
+    formData.append('id', id)
+    formData.append('device_name', deviceName)
+    formData.append('remark', remark)
+
+    const response = await requestWithForm('/v1/device/config/device/update', formData, headers)
+
+    if (response.code === 0) {
+      return {
+        success: true,
+        data: response.data,
+        message: response.echo || '更新本地打印机成功'
+      }
+    } else {
+      return {
+        success: false,
+        message: response.echo || '更新本地打印机失败'
+      }
+    }
+  } catch (error) {
+    console.error('更新本地打印机错误:', error)
+    return {
+      success: false,
+      message: error.message || '网络请求失败'
+    }
   }
 }
 

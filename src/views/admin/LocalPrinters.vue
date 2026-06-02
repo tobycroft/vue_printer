@@ -74,6 +74,7 @@
             </div>
           </div>
           <div class="printer-actions">
+            <button class="btn btn-secondary btn-sm" @click="editPrinter(printer)">修改</button>
             <button class="btn btn-danger btn-sm" @click="deletePrinter(printer.id)">删除</button>
           </div>
         </div>
@@ -109,12 +110,37 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>修改打印机</h3>
+          <button class="close-btn" @click="showEditModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-device-name">打印机名称</label>
+            <input id="edit-device-name" v-model="editForm.deviceName" type="text" placeholder="请输入打印机名称" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label for="edit-device-remark">备注</label>
+            <input id="edit-device-remark" v-model="editForm.remark" type="text" placeholder="可选" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="showEditModal = false">取消</button>
+          <button class="btn btn-primary" @click="updatePrinter" :disabled="updating">
+            {{ updating ? '更新中...' : '确认更新' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getDeviceConfig, saveDeviceConfig, getLocalDevices, addLocalDevice, deleteLocalDevice } from '@/services/printerService'
+import { getDeviceConfig, saveDeviceConfig, getLocalDevices, addLocalDevice, updateLocalDevice, deleteLocalDevice } from '@/services/printerService'
 
 const loading = ref(false)
 const error = ref(null)
@@ -124,9 +150,17 @@ const saving = ref(false)
 const testing = ref(false)
 const testResult = ref(null)
 const showAddModal = ref(false)
+const showEditModal = ref(false)
 const adding = ref(false)
+const updating = ref(false)
+const editingPrinterId = ref(null)
 
 const addForm = reactive({
+  deviceName: '',
+  remark: ''
+})
+
+const editForm = reactive({
   deviceName: '',
   remark: ''
 })
@@ -246,6 +280,37 @@ const addPrinter = async () => {
     alert('网络请求失败，请检查网络连接')
   } finally {
     adding.value = false
+  }
+}
+
+const editPrinter = (printer) => {
+  editingPrinterId.value = printer.id
+  editForm.deviceName = printer.deviceName
+  editForm.remark = printer.remark
+  showEditModal.value = true
+}
+
+const updatePrinter = async () => {
+  if (!editForm.deviceName) {
+    alert('请输入打印机名称')
+    return
+  }
+
+  updating.value = true
+  try {
+    const result = await updateLocalDevice(editingPrinterId.value, editForm.deviceName, editForm.remark)
+    if (result.success) {
+      alert('更新成功')
+      showEditModal.value = false
+      await fetchPrinters()
+    } else {
+      alert(result.message || '更新失败')
+    }
+  } catch (error) {
+    console.error('更新失败:', error)
+    alert('更新失败，请稍后重试')
+  } finally {
+    updating.value = false
   }
 }
 
