@@ -5,6 +5,7 @@
         <div class="header-text">
           <h2>本地打印机</h2>
           <p>管理本地打印机和Lodop配置</p>
+          <p class="usage-tip">💡 使用提示：只需在本页配置本地LODOP端口，云打印机将连接到您的设备驱动打印机。请确保当前电脑在线且本插件运行中。无需填写远程打印机（LODOP远程打印需付费授权），如支持LODOP项目可向其付费。本系统提供便捷免费的本地打印机连接及跨平台云打印功能。</p>
         </div>
       </div>
     </div>
@@ -398,6 +399,17 @@ onMounted(() => {
   margin: 0;
   font-size: 14px;
   color: #999;
+}
+
+.page-header .header-text .usage-tip {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 216, 255, 0.1);
+  border-left: 3px solid #00d8ff;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #b8e8f7;
 }
 
 .config-section {
