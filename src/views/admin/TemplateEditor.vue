@@ -155,8 +155,43 @@
               {{ control.text || '文本内容' }}
               <div
                 v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle"
-                @mousedown.stop="startResizeControl($event, control)"
+                class="resize-handle resize-handle-nw"
+                @mousedown.stop="startResizeControl($event, control, 'nw')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-n"
+                @mousedown.stop="startResizeControl($event, control, 'n')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-ne"
+                @mousedown.stop="startResizeControl($event, control, 'ne')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-w"
+                @mousedown.stop="startResizeControl($event, control, 'w')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-e"
+                @mousedown.stop="startResizeControl($event, control, 'e')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-sw"
+                @mousedown.stop="startResizeControl($event, control, 'sw')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-s"
+                @mousedown.stop="startResizeControl($event, control, 's')"
+              ></div>
+              <div
+                v-if="selectedControl?.id === control.id && control.type === 'text'"
+                class="resize-handle resize-handle-se"
+                @mousedown.stop="startResizeControl($event, control, 'se')"
               ></div>
             </div>
           </div>
@@ -192,8 +227,11 @@ const resizeStartData = reactive({
   initialWidth: 0,
   initialHeight: 0,
   initialFontSize: 0,
+  initialX: 0,
+  initialY: 0,
   startX: 0,
-  startY: 0
+  startY: 0,
+  direction: 'se'
 })
 
 // 监听选中控件的属性变化，自动调整大小
@@ -436,7 +474,7 @@ const stopDragControl = () => {
   document.removeEventListener('mouseup', stopDragControl)
 }
 
-const startResizeControl = (event, control) => {
+const startResizeControl = (event, control, direction = 'se') => {
   if (control.type !== 'text') return
   selectedControl.value = control
   resizingControl.value = control
@@ -444,8 +482,11 @@ const startResizeControl = (event, control) => {
   resizeStartData.initialWidth = control.width
   resizeStartData.initialHeight = control.height
   resizeStartData.initialFontSize = control.fontSize
+  resizeStartData.initialX = control.x
+  resizeStartData.initialY = control.y
   resizeStartData.startX = event.clientX
   resizeStartData.startY = event.clientY
+  resizeStartData.direction = direction
   
   document.addEventListener('mousemove', onResizeControl)
   document.addEventListener('mouseup', stopResizeControl)
@@ -457,17 +498,36 @@ const onResizeControl = (event) => {
   const scale = paperScale.value
   const deltaX = (event.clientX - resizeStartData.startX) / scale
   const deltaY = (event.clientY - resizeStartData.startY) / scale
+  const direction = resizeStartData.direction
   
-  // 计算缩放比例，保持宽高比
-  const initialAspectRatio = resizeStartData.initialWidth / resizeStartData.initialHeight
-  const newWidth = Math.max(20, resizeStartData.initialWidth + deltaX)
-  const newHeight = Math.max(10, newWidth / initialAspectRatio)
+  let newWidth = resizeStartData.initialWidth
+  let newHeight = resizeStartData.initialHeight
+  let newX = resizeStartData.initialX
+  let newY = resizeStartData.initialY
   
-  // 更新控件尺寸
+  // 根据不同方向进行缩放
+  if (direction.includes('e')) {
+    newWidth = Math.max(20, resizeStartData.initialWidth + deltaX)
+  }
+  if (direction.includes('w')) {
+    newWidth = Math.max(20, resizeStartData.initialWidth - deltaX)
+    newX = resizeStartData.initialX + deltaX
+  }
+  if (direction.includes('s')) {
+    newHeight = Math.max(10, resizeStartData.initialHeight + deltaY)
+  }
+  if (direction.includes('n')) {
+    newHeight = Math.max(10, resizeStartData.initialHeight - deltaY)
+    newY = resizeStartData.initialY + deltaY
+  }
+  
+  // 更新控件尺寸和位置
   resizingControl.value.width = Math.round(newWidth)
   resizingControl.value.height = Math.round(newHeight)
+  if (direction.includes('w')) resizingControl.value.x = Math.round(newX)
+  if (direction.includes('n')) resizingControl.value.y = Math.round(newY)
   
-  // 计算字号缩放比例
+  // 计算宽度方向的缩放比例，用于调整字号
   const widthRatio = newWidth / resizeStartData.initialWidth
   const newFontSize = Math.max(8, Math.min(72, resizeStartData.initialFontSize * widthRatio))
   resizingControl.value.fontSize = Math.round(newFontSize)
@@ -859,22 +919,87 @@ onMounted(async () => {
 
 .resize-handle {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   background: #00d8ff;
   border: 2px solid white;
-  border-radius: 2px;
-  bottom: -6px;
-  right: -6px;
-  cursor: nwse-resize;
+  border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   z-index: 100;
   box-sizing: border-box;
+  transition: transform 0.1s ease;
 }
 
 .resize-handle:hover {
   background: #00b8e6;
-  transform: scale(1.1);
-  transition: transform 0.1s ease;
+  transform: scale(1.2);
+}
+
+.resize-handle-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.resize-handle-n {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.resize-handle-n:hover {
+  transform: translateX(-50%) scale(1.2);
+}
+
+.resize-handle-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.resize-handle-w {
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-handle-w:hover {
+  transform: translateY(-50%) scale(1.2);
+}
+
+.resize-handle-e {
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-handle-e:hover {
+  transform: translateY(-50%) scale(1.2);
+}
+
+.resize-handle-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.resize-handle-s {
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.resize-handle-s:hover {
+  transform: translateX(-50%) scale(1.2);
+}
+
+.resize-handle-se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
 }
 </style>
