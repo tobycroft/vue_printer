@@ -79,58 +79,160 @@
 
         <div v-if="selectedControl" class="section">
           <h3>控件属性</h3>
-          <div class="property-group">
-            <label>文本内容</label>
-            <input 
-              v-model="selectedControl.text" 
-              type="text" 
-              class="form-control" 
-              @input="updateControlSizeOnChange(selectedControl)"
-            />
-          </div>
-          <div class="form-row">
+          
+          <!-- 固定文本 -->
+          <template v-if="selectedControl.type === 'text'">
             <div class="property-group">
-              <label>字号 (pt)</label>
-              <div class="font-size-control">
-                <input
-                  v-model.number="selectedControl.fontSize"
-                  type="number"
-                  min="8"
-                  max="72"
-                  class="form-control"
-                  @input="updateControlSizeOnChange(selectedControl)"
-                />
-                <input
-                  v-model.number="selectedControl.fontSize"
-                  type="range"
-                  min="8"
-                  max="72"
-                  class="form-slider"
-                  @input="updateControlSizeOnChange(selectedControl)"
-                />
+              <label>文本内容</label>
+              <input 
+                v-model="selectedControl.text" 
+                type="text" 
+                class="form-control" 
+                @input="updateControlSizeOnChange(selectedControl)"
+              />
+            </div>
+            <div class="form-row">
+              <div class="property-group">
+                <label>字号 (pt)</label>
+                <div class="font-size-control">
+                  <input
+                    v-model.number="selectedControl.fontSize"
+                    type="number"
+                    min="8"
+                    max="72"
+                    class="form-control"
+                    @input="updateControlSizeOnChange(selectedControl)"
+                  />
+                  <input
+                    v-model.number="selectedControl.fontSize"
+                    type="range"
+                    min="8"
+                    max="72"
+                    class="form-slider"
+                    @input="updateControlSizeOnChange(selectedControl)"
+                  />
+                </div>
+              </div>
+              <div class="property-group">
+                <label>对齐</label>
+                <select v-model="selectedControl.align" class="form-control">
+                  <option value="left">左</option>
+                  <option value="center">中</option>
+                  <option value="right">右</option>
+                </select>
               </div>
             </div>
             <div class="property-group">
-              <label>对齐</label>
-              <select v-model="selectedControl.align" class="form-control">
-                <option value="left">左</option>
-                <option value="center">中</option>
-                <option value="right">右</option>
+              <label>字体粗细</label>
+              <select 
+                v-model="selectedControl.fontWeight" 
+                class="form-control"
+                @change="updateControlSizeOnChange(selectedControl)"
+              >
+                <option value="normal">正常</option>
+                <option value="bold">粗体</option>
               </select>
             </div>
-          </div>
-          <div class="property-group">
-            <label>字体粗细</label>
-            <select 
-              v-model="selectedControl.fontWeight" 
-              class="form-control"
-              @change="updateControlSizeOnChange(selectedControl)"
-            >
-              <option value="normal">正常</option>
-              <option value="bold">粗体</option>
-            </select>
-          </div>
-          <div class="form-row">
+          </template>
+          
+          <!-- 数据文本 -->
+          <template v-else-if="selectedControl.type === 'data_text'">
+            <div class="property-group">
+              <label>占位模式</label>
+              <select v-model="selectedControl.placeholderMode" class="form-control">
+                <option value="prefix">在数据文本前输入</option>
+                <option value="suffix">在数据文本后输入</option>
+              </select>
+            </div>
+            <div class="property-group">
+              <label>占位文本</label>
+              <input 
+                v-model="selectedControl.placeholderText" 
+                type="text" 
+                class="form-control" 
+                @input="updateControlSizeOnChange(selectedControl)"
+              />
+            </div>
+            <div class="form-row">
+              <div class="property-group">
+                <label>字号 (pt)</label>
+                <div class="font-size-control">
+                  <input
+                    v-model.number="selectedControl.fontSize"
+                    type="number"
+                    min="8"
+                    max="72"
+                    class="form-control"
+                    @input="updateControlSizeOnChange(selectedControl)"
+                  />
+                  <input
+                    v-model.number="selectedControl.fontSize"
+                    type="range"
+                    min="8"
+                    max="72"
+                    class="form-slider"
+                    @input="updateControlSizeOnChange(selectedControl)"
+                  />
+                </div>
+              </div>
+              <div class="property-group">
+                <label>对齐</label>
+                <select v-model="selectedControl.align" class="form-control">
+                  <option value="left">左</option>
+                  <option value="center">中</option>
+                  <option value="right">右</option>
+                </select>
+              </div>
+            </div>
+            <div class="property-group">
+              <label>字体粗细</label>
+              <select 
+                v-model="selectedControl.fontWeight" 
+                class="form-control"
+                @change="updateControlSizeOnChange(selectedControl)"
+              >
+                <option value="normal">正常</option>
+                <option value="bold">粗体</option>
+              </select>
+            </div>
+          </template>
+          
+          <!-- 线条 -->
+          <template v-else-if="selectedControl.type === 'line'">
+            <div class="form-row">
+              <div class="property-group">
+                <label>宽度 (mm)</label>
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+              </div>
+              <div class="property-group">
+                <label>线条粗细</label>
+                <input v-model.number="selectedControl.borderWidth" type="number" min="1" max="20" class="form-control" />
+              </div>
+            </div>
+          </template>
+          
+          <!-- 图片 -->
+          <template v-else-if="selectedControl.type === 'image'">
+            <div class="property-group">
+              <label>图片类型</label>
+              <select v-model="selectedControl.imageType" class="form-control">
+                <option value="barcode">条形码</option>
+                <option value="qrcode">二维码</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="property-group">
+                <label>宽度 (mm)</label>
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+              </div>
+              <div class="property-group">
+                <label>高度 (mm)</label>
+                <input v-model.number="selectedControl.height" type="number" min="10" max="500" class="form-control" />
+              </div>
+            </div>
+          </template>
+          
+          <div class="form-row" v-if="selectedControl.type !== 'line'">
             <div class="property-group">
               <label>宽度 (mm)</label>
               <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
@@ -157,52 +259,88 @@
               v-for="control in currentTemplate.controls"
               :key="control.id"
               class="control-item"
-              :class="{ selected: selectedControl?.id === control.id }"
+              :class="{ 
+                selected: selectedControl?.id === control.id,
+                'line-control': control.type === 'line'
+              }"
               :style="getControlStyle(control)"
               @click.stop="selectControl(control)"
               @mousedown.stop="startDragControl($event, control)"
             >
-              {{ control.text || '文本内容' }}
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-nw"
-                @mousedown.stop="startResizeControl($event, control, 'nw')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-n"
-                @mousedown.stop="startResizeControl($event, control, 'n')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-ne"
-                @mousedown.stop="startResizeControl($event, control, 'ne')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-w"
-                @mousedown.stop="startResizeControl($event, control, 'w')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-e"
-                @mousedown.stop="startResizeControl($event, control, 'e')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-sw"
-                @mousedown.stop="startResizeControl($event, control, 'sw')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-s"
-                @mousedown.stop="startResizeControl($event, control, 's')"
-              ></div>
-              <div
-                v-if="selectedControl?.id === control.id && control.type === 'text'"
-                class="resize-handle resize-handle-se"
-                @mousedown.stop="startResizeControl($event, control, 'se')"
-              ></div>
+              <!-- 固定文本 -->
+              <template v-if="control.type === 'text'">
+                {{ control.text || '文本内容' }}
+              </template>
+              
+              <!-- 数据文本 -->
+              <template v-else-if="control.type === 'data_text'">
+                <template v-if="control.placeholderMode === 'prefix'">
+                  {{ control.placeholderText || '占位文本' }}[数据文本]
+                </template>
+                <template v-else>
+                  [数据文本]{{ control.placeholderText || '占位文本' }}
+                </template>
+              </template>
+              
+              <!-- 线条 -->
+              <template v-else-if="control.type === 'line'">
+                <div class="line-display"></div>
+              </template>
+              
+              <!-- 图片 -->
+              <template v-else-if="control.type === 'image'">
+                <div class="image-placeholder">
+                  {{ control.imageType === 'barcode' ? '条形码' : '二维码' }}
+                </div>
+              </template>
+              
+              <!-- 调整大小手柄 -->
+              <template v-if="selectedControl?.id === control.id && (control.type === 'text' || control.type === 'data_text')">
+                <div
+                  class="resize-handle resize-handle-nw"
+                  @mousedown.stop="startResizeControl($event, control, 'nw')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-n"
+                  @mousedown.stop="startResizeControl($event, control, 'n')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-ne"
+                  @mousedown.stop="startResizeControl($event, control, 'ne')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-w"
+                  @mousedown.stop="startResizeControl($event, control, 'w')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-e"
+                  @mousedown.stop="startResizeControl($event, control, 'e')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-sw"
+                  @mousedown.stop="startResizeControl($event, control, 'sw')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-s"
+                  @mousedown.stop="startResizeControl($event, control, 's')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-se"
+                  @mousedown.stop="startResizeControl($event, control, 'se')"
+                ></div>
+              </template>
+              
+              <!-- 线条调整大小手柄（只有左右） -->
+              <template v-if="selectedControl?.id === control.id && control.type === 'line'">
+                <div
+                  class="resize-handle resize-handle-w"
+                  @mousedown.stop="startResizeControl($event, control, 'w')"
+                ></div>
+                <div
+                  class="resize-handle resize-handle-e"
+                  @mousedown.stop="startResizeControl($event, control, 'e')"
+                ></div>
+              </template>
             </div>
           </div>
         </div>
@@ -298,16 +436,15 @@ watch(
 
 // 当字号、文本或字体粗细变化时，自动调整控件大小
 const updateControlSizeOnChange = (control) => {
-  if (!control || control.type !== 'text') return
+  if (!control || (control.type !== 'text' && control.type !== 'data_text')) return
   calculateControlSize(control)
 }
 
 const availableWidgets = [
-  { type: 'text', name: '文本框', icon: '📝' },
-  { type: 'rect', name: '矩形框', icon: '⬜' },
+  { type: 'text', name: '固定文本', icon: '📝' },
+  { type: 'data_text', name: '数据文本', icon: '📊' },
   { type: 'line', name: '线条', icon: '📏' },
-  { type: 'barcode', name: '条形码', icon: '🔤' },
-  { type: 'qrcode', name: '二维码', icon: '🟆' }
+  { type: 'image', name: '图片', icon: '🖼️' }
 ]
 
 const scriptLoaded = ref(false)
@@ -380,16 +517,37 @@ const paperStyle = computed(() => {
 
 const getControlStyle = (control) => {
   const scale = paperScale.value
-  return {
+  const baseStyle = {
     left: `${control.x * scale}px`,
     top: `${control.y * scale}px`,
     width: `${control.width * scale}px`,
     height: `${control.height * scale}px`,
-    fontSize: `${control.fontSize * scale}px`,
-    fontWeight: control.fontWeight,
-    textAlign: control.align,
     cursor: 'move'
   }
+  
+  // 文本相关样式
+  if (control.type === 'text' || control.type === 'data_text') {
+    return {
+      ...baseStyle,
+      fontSize: `${control.fontSize * scale}px`,
+      fontWeight: control.fontWeight,
+      textAlign: control.align
+    }
+  }
+  // 线条样式
+  else if (control.type === 'line') {
+    return {
+      ...baseStyle
+    }
+  }
+  // 图片样式
+  else if (control.type === 'image') {
+    return {
+      ...baseStyle
+    }
+  }
+  
+  return baseStyle
 }
 
 const goBack = () => {
@@ -442,7 +600,16 @@ const onDragStart = (event, widget) => {
 }
 
 const calculateControlSize = (control) => {
-  if (control.type !== 'text') return
+  if (control.type !== 'text' && control.type !== 'data_text') return
+  
+  let displayText
+  if (control.type === 'text') {
+    displayText = control.text || '文本内容'
+  } else {
+    displayText = control.placeholderMode === 'prefix' 
+      ? (control.placeholderText || '占位文本') + '[数据文本]'
+      : '[数据文本]' + (control.placeholderText || '占位文本')
+  }
   
   // 创建临时元素测量文本大小
   const tempDiv = document.createElement('div')
@@ -460,7 +627,7 @@ const calculateControlSize = (control) => {
   tempDiv.style.display = 'flex'
   tempDiv.style.alignItems = 'center'
   tempDiv.style.justifyContent = 'center'
-  tempDiv.textContent = control.text || '文本内容'
+  tempDiv.textContent = displayText
   
   document.body.appendChild(tempDiv)
   const textWidth = tempDiv.offsetWidth
@@ -480,33 +647,74 @@ const onDrop = (event) => {
   const x = (event.clientX - rect.left) / paperScale.value
   const y = (event.clientY - rect.top) / paperScale.value
   
-  // 默认宽度是纸张宽度的90%
-  const defaultWidth = draggedWidget.value.type === 'text' 
-    ? Math.round(currentTemplate.paperWidth * 0.9)
-    : 80
+  // 新建控件
+  let newControl
   
-  const newControl = {
-    id: Date.now().toString(),
-    type: draggedWidget.value.type,
-    x: Math.round(x),
-    y: Math.round(y),
-    width: defaultWidth,
-    height: draggedWidget.value.type === 'text' ? 30 : (draggedWidget.value.type === 'line' ? 2 : 60),
-    text: '',
-    fontSize: 12,
-    fontWeight: 'normal',
-    align: 'left',
-    color: '#000000',
-    borderWidth: 1,
-    borderColor: '#000000'
+  // 固定文本
+  if (draggedWidget.value.type === 'text') {
+    newControl = {
+      id: Date.now().toString(),
+      type: 'text',
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(currentTemplate.paperWidth * 0.9),
+      height: 30,
+      text: '',
+      fontSize: 12,
+      fontWeight: 'normal',
+      align: 'left',
+      color: '#000000'
+    }
+  }
+  // 数据文本
+  else if (draggedWidget.value.type === 'data_text') {
+    newControl = {
+      id: Date.now().toString(),
+      type: 'data_text',
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(currentTemplate.paperWidth * 0.9),
+      height: 30,
+      placeholderMode: 'prefix',
+      placeholderText: '',
+      fontSize: 12,
+      fontWeight: 'normal',
+      align: 'left',
+      color: '#000000'
+    }
+  }
+  // 线条
+  else if (draggedWidget.value.type === 'line') {
+    newControl = {
+      id: Date.now().toString(),
+      type: 'line',
+      x: Math.round(x),
+      y: Math.round(y),
+      width: 100,
+      height: 5,
+      borderWidth: 2,
+      color: '#000000'
+    }
+  }
+  // 图片
+  else if (draggedWidget.value.type === 'image') {
+    newControl = {
+      id: Date.now().toString(),
+      type: 'image',
+      x: Math.round(x),
+      y: Math.round(y),
+      width: 100,
+      height: 100,
+      imageType: 'barcode',
+      color: '#000000'
+    }
   }
   
-  // 新创建的文本框保持默认大小，不自动调整
-  // 用户输入文本或调整字号时才会自动调整
-  
-  currentTemplate.controls.push(newControl)
-  selectedControl.value = newControl
-  draggedWidget.value = null
+  if (newControl) {
+    currentTemplate.controls.push(newControl)
+    selectedControl.value = newControl
+    draggedWidget.value = null
+  }
 }
 
 const onPaperClick = () => {
@@ -653,16 +861,49 @@ const previewTemplate = () => {
     LODOP.SET_PRINT_PAGESIZE(0, currentTemplate.paperWidth, currentTemplate.paperHeight, '自定义纸张')
     
     currentTemplate.controls.forEach((control) => {
+      // 固定文本
       if (control.type === 'text') {
         LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, control.text || '')
         LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize)
         LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0)
         const align = control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1)
         LODOP.SET_PRINT_STYLEA(0, 'Alignment', align)
-      } else if (control.type === 'rect') {
-        LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, control.borderWidth || 1)
-      } else if (control.type === 'line') {
-        LODOP.ADD_PRINT_LINE(control.y, control.x, control.y, control.x + control.width, control.borderWidth || 1)
+      }
+      // 数据文本
+      else if (control.type === 'data_text') {
+        // 数据文本在预览时只显示占位文本，方便查看布局
+        // 实际打印时会由后端拼接数据
+        const previewText = control.placeholderMode === 'prefix' 
+          ? (control.placeholderText || '') + '[数据文本]'
+          : '[数据文本]' + (control.placeholderText || '')
+        LODOP.ADD_PRINT_TEXT(control.y, control.x, control.width, control.height, previewText)
+        LODOP.SET_PRINT_STYLEA(0, 'FontSize', control.fontSize)
+        LODOP.SET_PRINT_STYLEA(0, 'Bold', control.fontWeight === 'bold' ? 1 : 0)
+        const align = control.align === 'center' ? 2 : (control.align === 'right' ? 3 : 1)
+        LODOP.SET_PRINT_STYLEA(0, 'Alignment', align)
+      }
+      // 线条
+      else if (control.type === 'line') {
+        LODOP.ADD_PRINT_LINE(
+          control.y + control.height / 2, 
+          control.x, 
+          control.y + control.height / 2, 
+          control.x + control.width, 
+          control.borderWidth || 2
+        )
+      }
+      // 图片
+      else if (control.type === 'image') {
+        // 暂时用矩形代替图片预览
+        LODOP.ADD_PRINT_RECT(control.y, control.x, control.width, control.height, 0, 1)
+        LODOP.ADD_PRINT_TEXT(
+          control.y + control.height / 2 - 10, 
+          control.x, 
+          control.width, 
+          20, 
+          control.imageType === 'barcode' ? '[条形码]' : '[二维码]'
+        )
+        LODOP.SET_PRINT_STYLEA(0, 'Alignment', 2) // 居中
       }
     })
     
@@ -677,8 +918,14 @@ onMounted(async () => {
   await loadPrinterConfig()
   await loadLodopScript()
   
-  const params = new URLSearchParams(window.location.search)
-  const templateId = params.get('id')
+  // 从 hash 中解析参数
+  let templateId = null
+  const hash = window.location.hash
+  const queryIndex = hash.indexOf('?')
+  if (queryIndex !== -1) {
+    const params = new URLSearchParams(hash.slice(queryIndex + 1))
+    templateId = params.get('id')
+  }
   if (templateId) {
     storageService.getTemplate(templateId).then(result => {
       if (result.success) {
@@ -1034,6 +1281,44 @@ onMounted(async () => {
   font-family: Arial, sans-serif;
   padding: 2px 4px;
   line-height: 1.2;
+}
+
+// 线条控件样式
+.line-control {
+  padding: 0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.line-control .line-display {
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+}
+
+.line-control.selected {
+  border: 2px solid #00d8ff;
+  box-shadow: 0 0 0 2px rgba(0, 216, 255, 0.3);
+  padding: 2px;
+}
+
+.line-control.selected .line-display {
+  height: calc(100% - 4px);
+}
+
+// 图片控件样式
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px dashed #999;
+  font-size: 12px;
+  color: #666;
 }
 
 .control-item:hover {
