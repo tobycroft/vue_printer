@@ -88,7 +88,6 @@
                 v-model="selectedControl.text" 
                 type="text" 
                 class="form-control" 
-                @input="updateControlSizeOnChange(selectedControl)"
               />
             </div>
             <div class="form-row">
