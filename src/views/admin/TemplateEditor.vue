@@ -88,6 +88,7 @@
                 v-model="selectedControl.text" 
                 type="text" 
                 class="form-control" 
+                @input="watchControlUpdates(selectedControl)"
               />
             </div>
             <div class="form-row">
@@ -100,6 +101,7 @@
                     min="8"
                     max="72"
                     class="form-control"
+                    @input="watchControlUpdates(selectedControl)"
                   />
                   <input
                     v-model.number="selectedControl.fontSize"
@@ -107,12 +109,13 @@
                     min="8"
                     max="72"
                     class="form-slider"
+                    @input="watchControlUpdates(selectedControl)"
                   />
                 </div>
               </div>
               <div class="property-group">
                 <label>对齐</label>
-                <select v-model="selectedControl.align" class="form-control">
+                <select v-model="selectedControl.align" class="form-control" @change="watchControlUpdates(selectedControl)">
                   <option value="left">左</option>
                   <option value="center">中</option>
                   <option value="right">右</option>
@@ -124,6 +127,7 @@
               <select 
                 v-model="selectedControl.fontWeight" 
                 class="form-control"
+                @change="watchControlUpdates(selectedControl)"
               >
                 <option value="normal">正常</option>
                 <option value="bold">粗体</option>
@@ -132,11 +136,11 @@
             <div class="form-row">
               <div class="property-group">
                 <label>宽度 (mm)</label>
-                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
               <div class="property-group">
                 <label>高度 (mm)</label>
-                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" />
+                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
             </div>
             <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
@@ -146,7 +150,7 @@
           <template v-else-if="selectedControl.type === 'data_text'">
             <div class="property-group">
               <label>占位模式</label>
-              <select v-model="selectedControl.placeholderMode" class="form-control">
+              <select v-model="selectedControl.placeholderMode" class="form-control" @change="watchControlUpdates(selectedControl)">
                 <option value="prefix">在数据文本前输入</option>
                 <option value="suffix">在数据文本后输入</option>
               </select>
@@ -157,6 +161,7 @@
                 v-model="selectedControl.placeholderText" 
                 type="text" 
                 class="form-control" 
+                @input="watchControlUpdates(selectedControl)"
               />
             </div>
             <div class="form-row">
@@ -169,6 +174,7 @@
                     min="8"
                     max="72"
                     class="form-control"
+                    @input="watchControlUpdates(selectedControl)"
                   />
                   <input
                     v-model.number="selectedControl.fontSize"
@@ -176,12 +182,13 @@
                     min="8"
                     max="72"
                     class="form-slider"
+                    @input="watchControlUpdates(selectedControl)"
                   />
                 </div>
               </div>
               <div class="property-group">
                 <label>对齐</label>
-                <select v-model="selectedControl.align" class="form-control">
+                <select v-model="selectedControl.align" class="form-control" @change="watchControlUpdates(selectedControl)">
                   <option value="left">左</option>
                   <option value="center">中</option>
                   <option value="right">右</option>
@@ -193,6 +200,7 @@
               <select 
                 v-model="selectedControl.fontWeight" 
                 class="form-control"
+                @change="watchControlUpdates(selectedControl)"
               >
                 <option value="normal">正常</option>
                 <option value="bold">粗体</option>
@@ -201,11 +209,11 @@
             <div class="form-row">
               <div class="property-group">
                 <label>宽度 (mm)</label>
-                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
               <div class="property-group">
                 <label>高度 (mm)</label>
-                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" />
+                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
             </div>
             <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
@@ -216,11 +224,11 @@
             <div class="form-row">
               <div class="property-group">
                 <label>宽度 (mm)</label>
-                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
               <div class="property-group">
                 <label>线条粗细</label>
-                <input v-model.number="selectedControl.borderWidth" type="number" min="1" max="20" class="form-control" />
+                <input v-model.number="selectedControl.borderWidth" type="number" min="1" max="20" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
             </div>
             <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
@@ -230,7 +238,7 @@
           <template v-else-if="selectedControl.type === 'image'">
             <div class="property-group">
               <label>图片类型</label>
-              <select v-model="selectedControl.imageType" class="form-control">
+              <select v-model="selectedControl.imageType" class="form-control" @change="watchControlUpdates(selectedControl)">
                 <option value="barcode">条形码</option>
                 <option value="qrcode">二维码</option>
               </select>
@@ -238,11 +246,11 @@
             <div class="form-row">
               <div class="property-group">
                 <label>宽度 (mm)</label>
-                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
               <div class="property-group">
                 <label>高度 (mm)</label>
-                <input v-model.number="selectedControl.height" type="number" min="10" max="500" class="form-control" />
+                <input v-model.number="selectedControl.height" type="number" min="10" max="500" class="form-control" @input="watchControlUpdates(selectedControl)" />
               </div>
             </div>
             <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
@@ -357,6 +365,27 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storageService } from '@/services/storageService'
 import { getDeviceConfig } from '@/services/printerService'
+import { getTemplateControls, addControl, updateControl, deleteControl } from '@/services/templateControlService'
+
+// 防抖函数
+function debounce(func, wait) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func.apply(this, args), wait)
+  }
+}
+
+// 用于跟踪控件更新的防抖函数
+const debouncedUpdateControl = debounce(async (controlId, updates) => {
+  if (!isEditing.value || !currentTemplate.id) return
+  
+  console.log('防抖更新控件:', controlId, updates)
+  const result = await updateControl(controlId, updates)
+  if (!result.success) {
+    console.error('更新控件失败:', result.message)
+  }
+}, 300)
 
 const isEditing = ref(false)
 const paperPreset = ref('')
@@ -653,7 +682,7 @@ const calculateControlSize = (control) => {
   control.height = Math.max(10, Math.ceil(textHeight / 3.78) + 3)
 }
 
-const onDrop = (event) => {
+const onDrop = async (event) => {
   console.log('拖放事件触发:', event, 'draggedWidget:', draggedWidget.value)
   if (!draggedWidget.value) {
     console.log('draggedWidget 为空')
@@ -666,11 +695,12 @@ const onDrop = (event) => {
   
   // 新建控件
   let newControl
+  const tempId = Date.now().toString()
   
   // 固定文本
   if (draggedWidget.value.type === 'text') {
     newControl = {
-      id: Date.now().toString(),
+      id: tempId,
       type: 'text',
       x: Math.round(x),
       y: Math.round(y),
@@ -686,7 +716,7 @@ const onDrop = (event) => {
   // 数据文本
   else if (draggedWidget.value.type === 'data_text') {
     newControl = {
-      id: Date.now().toString(),
+      id: tempId,
       type: 'data_text',
       x: Math.round(x),
       y: Math.round(y),
@@ -703,7 +733,7 @@ const onDrop = (event) => {
   // 线条
   else if (draggedWidget.value.type === 'line') {
     newControl = {
-      id: Date.now().toString(),
+      id: tempId,
       type: 'line',
       x: Math.round(x),
       y: Math.round(y),
@@ -716,7 +746,7 @@ const onDrop = (event) => {
   // 图片
   else if (draggedWidget.value.type === 'image') {
     newControl = {
-      id: Date.now().toString(),
+      id: tempId,
       type: 'image',
       x: Math.round(x),
       y: Math.round(y),
@@ -732,6 +762,18 @@ const onDrop = (event) => {
     selectedControl.value = newControl
     draggedWidget.value = null
     console.log('控件添加成功！当前控件总数:', currentTemplate.controls.length)
+    
+    // 如果是编辑模式，调用后端 API 添加控件
+    if (isEditing.value && currentTemplate.id) {
+      const result = await addControl(currentTemplate.id, newControl)
+      if (result.success) {
+        console.log('后端添加控件成功')
+        // 注意：这里我们暂时用临时ID，后续需要获取真实ID，
+        // 但由于后端add接口没有返回id，我们暂时保留临时ID的方式
+      } else {
+        console.error('后端添加控件失败:', result.message)
+      }
+    }
   } else {
     console.log('控件创建失败')
   }
@@ -745,12 +787,25 @@ const selectControl = (control) => {
   selectedControl.value = control
 }
 
-const deleteSelectedControl = () => {
+const deleteSelectedControl = async () => {
   if (!selectedControl.value) return
-  const index = currentTemplate.controls.findIndex(c => c.id === selectedControl.value.id)
+  const controlId = selectedControl.value.id
+  const index = currentTemplate.controls.findIndex(c => c.id === controlId)
   if (index >= 0) {
     currentTemplate.controls.splice(index, 1)
     selectedControl.value = null
+    
+    // 如果是编辑模式，调用后端 API 删除控件
+    if (isEditing.value && currentTemplate.id) {
+      // 只有当控件id看起来像数字（来自后端的真实ID）时才调用API
+      // 或者我们简单地都尝试调用
+      const result = await deleteControl(controlId)
+      if (result.success) {
+        console.log('后端删除控件成功')
+      } else {
+        console.error('后端删除控件失败:', result.message)
+      }
+    }
   }
 }
 
@@ -779,10 +834,19 @@ const onDragControl = (event) => {
   draggingControl.value.y = Math.round(newY)
 }
 
-const stopDragControl = () => {
+const stopDragControl = async () => {
+  const control = draggingControl.value
   draggingControl.value = null
   document.removeEventListener('mousemove', onDragControl)
   document.removeEventListener('mouseup', stopDragControl)
+  
+  // 如果是编辑模式，调用后端 API 更新控件位置
+  if (control && isEditing.value && currentTemplate.id) {
+    debouncedUpdateControl(control.id, {
+      x: control.x,
+      y: control.y
+    })
+  }
 }
 
 const startResizeControl = (event, control, direction = 'se') => {
@@ -843,10 +907,77 @@ const onResizeControl = (event) => {
   if (direction.includes('n')) resizingControl.value.y = Math.round(newY)
 }
 
-const stopResizeControl = () => {
+const stopResizeControl = async () => {
+  const control = resizingControl.value
   resizingControl.value = null
   document.removeEventListener('mousemove', onResizeControl)
   document.removeEventListener('mouseup', stopResizeControl)
+  
+  // 如果是编辑模式，调用后端 API 更新控件尺寸
+  if (control && isEditing.value && currentTemplate.id) {
+    debouncedUpdateControl(control.id, {
+      x: control.x,
+      y: control.y,
+      width: control.width,
+      height: control.height
+    })
+  }
+}
+
+// 监听选中控件的属性变化，自动更新后端
+const watchControlProperties = () => {
+  // 使用深度监听来跟踪控件变化
+  if (!selectedControl.value) return
+  
+  // 我们会通过 watch 监听 selectedControl 的变化
+}
+
+// 监听控件变化的 watch 函数
+const lastControlState = ref(null)
+
+watch(
+  selectedControl,
+  (newControl) => {
+    if (newControl) {
+      // 保存当前状态作为对比基准
+      lastControlState.value = JSON.parse(JSON.stringify(newControl))
+    } else {
+      lastControlState.value = null
+    }
+  }
+)
+
+// 监听控件属性变化并触发更新
+const watchControlUpdates = (control) => {
+  // 这个函数会在属性变化时被调用
+  if (!control || !isEditing.value || !currentTemplate.id) return
+  
+  // 对比当前状态与上一状态
+  if (!lastControlState.value) {
+    lastControlState.value = JSON.parse(JSON.stringify(control))
+    return
+  }
+  
+  // 收集变化的属性
+  const updates = {}
+  const fields = [
+    'text', 'placeholderMode', 'placeholderText',
+    'fontSize', 'fontWeight', 'align',
+    'width', 'height', 'x', 'y',
+    'borderWidth', 'imageType'
+  ]
+  
+  fields.forEach(field => {
+    if (control[field] !== lastControlState.value[field]) {
+      updates[field] = control[field]
+    }
+  })
+  
+  // 如果有变化，调用更新
+  if (Object.keys(updates).length > 0) {
+    lastControlState.value = JSON.parse(JSON.stringify(control))
+    debouncedUpdateControl(control.id, updates)
+  }
 }
 
 const saveTemplate = async () => {
@@ -959,15 +1090,36 @@ onMounted(async () => {
   
   if (templateId) {
     console.log('准备从 storage 加载模板，ID:', templateId)
-    storageService.getTemplate(templateId).then(result => {
-      console.log('storage 返回结果:', result)
-      if (result.success) {
-        const template = result.data
-        console.log('模板数据:', template)
-        currentTemplate.id = template.id
-        currentTemplate.name = template.name
-        currentTemplate.paperWidth = template.paperWidth || 210
-        currentTemplate.paperHeight = template.paperHeight || 297
+    
+    // 先从本地 storage 获取基本信息
+    const localResult = await storageService.getTemplate(templateId)
+    console.log('local storage 返回结果:', localResult)
+    
+    if (localResult.success) {
+      const template = localResult.data
+      console.log('模板数据:', template)
+      currentTemplate.id = template.id
+      currentTemplate.name = template.name
+      currentTemplate.paperWidth = template.paperWidth || 210
+      currentTemplate.paperHeight = template.paperHeight || 297
+      
+      isEditing.value = true
+      
+      // 然后尝试从后端 API 获取控件数据
+      console.log('尝试从后端获取控件数据...')
+      const apiResult = await getTemplateControls(templateId)
+      console.log('后端返回控件结果:', apiResult)
+      
+      if (apiResult.success && apiResult.data && apiResult.data.length > 0) {
+        // 使用后端数据
+        currentTemplate.controls.length = 0
+        apiResult.data.forEach(control => {
+          currentTemplate.controls.push(control)
+        })
+        console.log('从后端加载控件成功，数量:', currentTemplate.controls.length)
+      } else {
+        // 回退到本地 storage 数据
+        console.log('使用本地 storage 的控件数据')
         
         // 清空现有控件并添加新控件，确保响应性
         currentTemplate.controls.length = 0
@@ -996,15 +1148,12 @@ onMounted(async () => {
         controls.forEach(control => {
           currentTemplate.controls.push({ ...control })
         })
-        
-        isEditing.value = true
-        console.log('模板加载完成，isEditing:', isEditing.value, '控件数量:', currentTemplate.controls.length)
-      } else {
-        console.error('加载模板失败:', result.message)
       }
-    }).catch(error => {
-      console.error('调用 storage 出错:', error)
-    })
+      
+      console.log('模板加载完成，isEditing:', isEditing.value, '控件数量:', currentTemplate.controls.length)
+    } else {
+      console.error('加载模板失败:', localResult.message)
+    }
   } else {
     console.log('没有 templateId，进入新建模式')
   }
