@@ -942,18 +942,28 @@ onMounted(async () => {
   await loadPrinterConfig()
   await loadLodopScript()
   
+  console.log('=== 开始加载模板 ===')
+  console.log('当前URL hash:', window.location.hash)
+  
   // 从 hash 中解析参数
   let templateId = null
   const hash = window.location.hash
   const queryIndex = hash.indexOf('?')
+  console.log('hash:', hash, 'queryIndex:', queryIndex)
+  
   if (queryIndex !== -1) {
     const params = new URLSearchParams(hash.slice(queryIndex + 1))
     templateId = params.get('id')
+    console.log('解析到的 templateId:', templateId)
   }
+  
   if (templateId) {
+    console.log('准备从 storage 加载模板，ID:', templateId)
     storageService.getTemplate(templateId).then(result => {
+      console.log('storage 返回结果:', result)
       if (result.success) {
         const template = result.data
+        console.log('模板数据:', template)
         currentTemplate.id = template.id
         currentTemplate.name = template.name
         currentTemplate.paperWidth = template.paperWidth || 210
@@ -962,14 +972,21 @@ onMounted(async () => {
         // 清空现有控件并添加新控件，确保响应性
         currentTemplate.controls.length = 0
         const controls = template.controls || []
+        console.log('控件数据:', controls)
         controls.forEach(control => {
           currentTemplate.controls.push({ ...control })
         })
         
         isEditing.value = true
-        console.log('模板加载完成，控件数量:', currentTemplate.controls.length)
+        console.log('模板加载完成，isEditing:', isEditing.value, '控件数量:', currentTemplate.controls.length)
+      } else {
+        console.error('加载模板失败:', result.message)
       }
+    }).catch(error => {
+      console.error('调用 storage 出错:', error)
     })
+  } else {
+    console.log('没有 templateId，进入新建模式')
   }
 })
 </script>
