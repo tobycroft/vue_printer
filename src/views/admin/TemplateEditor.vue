@@ -101,7 +101,6 @@
                     min="8"
                     max="72"
                     class="form-control"
-                    @input="updateControlSizeOnChange(selectedControl)"
                   />
                   <input
                     v-model.number="selectedControl.fontSize"
@@ -109,7 +108,6 @@
                     min="8"
                     max="72"
                     class="form-slider"
-                    @input="updateControlSizeOnChange(selectedControl)"
                   />
                 </div>
               </div>
@@ -127,12 +125,22 @@
               <select 
                 v-model="selectedControl.fontWeight" 
                 class="form-control"
-                @change="updateControlSizeOnChange(selectedControl)"
               >
                 <option value="normal">正常</option>
                 <option value="bold">粗体</option>
               </select>
             </div>
+            <div class="form-row">
+              <div class="property-group">
+                <label>宽度 (mm)</label>
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+              </div>
+              <div class="property-group">
+                <label>高度 (mm)</label>
+                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" />
+              </div>
+            </div>
+            <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
           </template>
           
           <!-- 数据文本 -->
@@ -150,7 +158,6 @@
                 v-model="selectedControl.placeholderText" 
                 type="text" 
                 class="form-control" 
-                @input="updateControlSizeOnChange(selectedControl)"
               />
             </div>
             <div class="form-row">
@@ -163,7 +170,6 @@
                     min="8"
                     max="72"
                     class="form-control"
-                    @input="updateControlSizeOnChange(selectedControl)"
                   />
                   <input
                     v-model.number="selectedControl.fontSize"
@@ -171,7 +177,6 @@
                     min="8"
                     max="72"
                     class="form-slider"
-                    @input="updateControlSizeOnChange(selectedControl)"
                   />
                 </div>
               </div>
@@ -189,12 +194,22 @@
               <select 
                 v-model="selectedControl.fontWeight" 
                 class="form-control"
-                @change="updateControlSizeOnChange(selectedControl)"
               >
                 <option value="normal">正常</option>
                 <option value="bold">粗体</option>
               </select>
             </div>
+            <div class="form-row">
+              <div class="property-group">
+                <label>宽度 (mm)</label>
+                <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
+              </div>
+              <div class="property-group">
+                <label>高度 (mm)</label>
+                <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" />
+              </div>
+            </div>
+            <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
           </template>
           
           <!-- 线条 -->
@@ -209,6 +224,7 @@
                 <input v-model.number="selectedControl.borderWidth" type="number" min="1" max="20" class="form-control" />
               </div>
             </div>
+            <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
           </template>
           
           <!-- 图片 -->
@@ -230,19 +246,8 @@
                 <input v-model.number="selectedControl.height" type="number" min="10" max="500" class="form-control" />
               </div>
             </div>
+            <button class="btn btn-danger btn-sm full-width" @click.stop="deleteSelectedControl">删除控件</button>
           </template>
-          
-          <div class="form-row" v-if="selectedControl.type !== 'line'">
-            <div class="property-group">
-              <label>宽度 (mm)</label>
-              <input v-model.number="selectedControl.width" type="number" min="10" max="500" class="form-control" />
-            </div>
-            <div class="property-group">
-              <label>高度 (mm)</label>
-              <input v-model.number="selectedControl.height" type="number" min="5" max="200" class="form-control" />
-            </div>
-          </div>
-          <button class="btn btn-danger btn-sm full-width" @click="deleteSelectedControl">删除控件</button>
         </div>
       </aside>
 
@@ -1285,9 +1290,7 @@ onMounted(async () => {
   position: absolute;
   border: 2px solid transparent;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   overflow: hidden;
   font-family: Arial, sans-serif;
   padding: 2px 4px;
