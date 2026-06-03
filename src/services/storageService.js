@@ -295,12 +295,21 @@ class StorageService {
         return templates;
       }
 
+      // 确保控件是数组
+      let safeControls = template.controls || [];
+      if (!Array.isArray(safeControls)) {
+        safeControls = [];
+      }
+
       const templateData = {
         ...template,
+        controls: safeControls,
         id: template.id || Date.now().toString(),
         createdAt: template.createdAt || Date.now(),
         updatedAt: Date.now()
       };
+
+      console.log('保存模板数据:', templateData);
 
       const existingIndex = templates.data.findIndex(t => t.id === templateData.id);
       if (existingIndex >= 0) {

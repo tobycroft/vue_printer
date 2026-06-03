@@ -971,8 +971,28 @@ onMounted(async () => {
         
         // 清空现有控件并添加新控件，确保响应性
         currentTemplate.controls.length = 0
-        const controls = template.controls || []
-        console.log('控件数据:', controls)
+        
+        // 安全获取控件，确保是数组
+        let controls = template.controls
+        console.log('原始控件数据:', controls, '类型:', typeof controls)
+        
+        if (!Array.isArray(controls)) {
+          try {
+            // 尝试解析
+            if (typeof controls === 'string') {
+              controls = JSON.parse(controls)
+            }
+            // 如果还是不是数组，给一个空数组
+            if (!Array.isArray(controls)) {
+              controls = []
+            }
+          } catch (e) {
+            console.warn('解析控件数据失败，使用空数组', e)
+            controls = []
+          }
+        }
+        
+        console.log('处理后的控件数据:', controls)
         controls.forEach(control => {
           currentTemplate.controls.push({ ...control })
         })
