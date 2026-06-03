@@ -606,8 +606,10 @@ const applyPaperPreset = () => {
 }
 
 const onDragStart = (event, widget) => {
+  console.log('开始拖拽控件:', widget)
   draggedWidget.value = widget
   event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('text/plain', widget.type)
 }
 
 const calculateControlSize = (control) => {
@@ -652,7 +654,11 @@ const calculateControlSize = (control) => {
 }
 
 const onDrop = (event) => {
-  if (!draggedWidget.value) return
+  console.log('拖放事件触发:', event, 'draggedWidget:', draggedWidget.value)
+  if (!draggedWidget.value) {
+    console.log('draggedWidget 为空')
+    return
+  }
   const paper = event.currentTarget
   const rect = paper.getBoundingClientRect()
   const x = (event.clientX - rect.left) / paperScale.value
@@ -725,6 +731,9 @@ const onDrop = (event) => {
     currentTemplate.controls.push(newControl)
     selectedControl.value = newControl
     draggedWidget.value = null
+    console.log('控件添加成功！当前控件总数:', currentTemplate.controls.length)
+  } else {
+    console.log('控件创建失败')
   }
 }
 
@@ -949,8 +958,16 @@ onMounted(async () => {
         currentTemplate.name = template.name
         currentTemplate.paperWidth = template.paperWidth || 210
         currentTemplate.paperHeight = template.paperHeight || 297
-        currentTemplate.controls = JSON.parse(JSON.stringify(template.controls || []))
+        
+        // 清空现有控件并添加新控件，确保响应性
+        currentTemplate.controls.length = 0
+        const controls = template.controls || []
+        controls.forEach(control => {
+          currentTemplate.controls.push({ ...control })
+        })
+        
         isEditing.value = true
+        console.log('模板加载完成，控件数量:', currentTemplate.controls.length)
       }
     })
   }
