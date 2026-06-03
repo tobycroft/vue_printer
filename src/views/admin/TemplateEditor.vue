@@ -385,8 +385,11 @@ const resizeStartData = reactive({
   initialY: 0,
   startX: 0,
   startY: 0,
-  direction: 'se'
+  direction: ''
 })
+
+// 标记控件是否被用户手动调整过大小
+const manuallyResizedControls = ref(new Set())
 
 // 监听选中控件的属性变化，自动调整大小
 watch(
@@ -437,6 +440,10 @@ watch(
 // 当字号、文本或字体粗细变化时，自动调整控件大小
 const updateControlSizeOnChange = (control) => {
   if (!control || (control.type !== 'text' && control.type !== 'data_text')) return
+  
+  // 如果控件被用户手动调整过大小，不再自动调整
+  if (manuallyResizedControls.value.has(control.id)) return
+  
   calculateControlSize(control)
 }
 
@@ -766,7 +773,11 @@ const stopDragControl = () => {
 }
 
 const startResizeControl = (event, control, direction = 'se') => {
-  if (control.type !== 'text') return
+  if (control.type !== 'text' && control.type !== 'data_text') return
+  
+  // 标记控件为手动调整过大小
+  manuallyResizedControls.value.add(control.id)
+  
   selectedControl.value = control
   resizingControl.value = control
   
@@ -1277,10 +1288,13 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
   font-family: Arial, sans-serif;
   padding: 2px 4px;
   line-height: 1.2;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 /* 线条控件样式 */
