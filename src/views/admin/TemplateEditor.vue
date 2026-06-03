@@ -1283,7 +1283,7 @@ onMounted(async () => {
   line-height: 1.2;
 }
 
-// 线条控件样式
+/* 线条控件样式 */
 .line-control {
   padding: 0;
   border: none;
@@ -1308,7 +1308,7 @@ onMounted(async () => {
   height: calc(100% - 4px);
 }
 
-// 图片控件样式
+/* 图片控件样式 */
 .image-placeholder {
   width: 100%;
   height: 100%;
