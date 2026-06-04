@@ -67,8 +67,9 @@
             type="number" 
             min="10" 
             max="500" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('width', $event)"
           />
         </div>
         <div class="property-group">
@@ -78,8 +79,9 @@
             type="number" 
             min="5" 
             max="200" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('height', $event)"
           />
         </div>
       </div>
@@ -162,8 +164,9 @@
             type="number" 
             min="10" 
             max="500" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('width', $event)"
           />
         </div>
         <div class="property-group">
@@ -173,8 +176,9 @@
             type="number" 
             min="5" 
             max="200" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('height', $event)"
           />
         </div>
       </div>
@@ -191,8 +195,9 @@
             type="number" 
             min="10" 
             max="500" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('width', $event)"
           />
         </div>
         <div class="property-group">
@@ -231,8 +236,9 @@
             type="number" 
             min="10" 
             max="500" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('width', $event)"
           />
         </div>
         <div class="property-group">
@@ -242,8 +248,9 @@
             type="number" 
             min="10" 
             max="500" 
+            step="1"
             class="form-control" 
-            @input="$emit('update', control)"
+            @input="onSizeInput('height', $event)"
           />
         </div>
       </div>
@@ -255,12 +262,21 @@
 <script setup>
 import { defineProps, defineEmits } from 'vue'
 
-defineProps({
+const props = defineProps({
   control: {
     type: Object,
     required: true
   }
 })
 
-defineEmits(['update', 'delete'])
+const emit = defineEmits(['update', 'delete'])
+
+// 处理尺寸输入，确保为整数
+const onSizeInput = (field, event) => {
+  const value = parseInt(event.target.value, 10)
+  if (!isNaN(value)) {
+    props.control[field] = value
+    emit('update', props.control)
+  }
+}
 </script>

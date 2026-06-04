@@ -22,8 +22,9 @@
             <tr>
               <th>模板名称</th>
               <th>纸张尺寸</th>
-              <th>控件数量</th>
+              <th>预设尺寸</th>
               <th>创建时间</th>
+              <th>修改时间</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -31,8 +32,9 @@
             <tr v-for="template in templates" :key="template.id">
               <td>{{ template.name }}</td>
               <td>{{ template.paperWidth }} × {{ template.paperHeight }} mm</td>
-              <td>{{ template.controls ? template.controls.length : 0 }}</td>
+              <td>{{ template.presetSize || '-' }}</td>
               <td>{{ formatDate(template.createdAt) }}</td>
+              <td>{{ formatDate(template.updatedAt) }}</td>
               <td class="actions">
                 <button class="btn btn-secondary" @click="goToEditor(template.id)">修改</button>
                 <button class="btn btn-danger" @click="deleteTemplate(template.id)">删除</button>
@@ -73,7 +75,17 @@ const fetchTemplates = async () => {
     const result = await templateApi.getTemplates()
     // go_printer返回的格式是{code:0, data:[], echo:''}
     if (result.code === 0) {
-      templates.value = result.data
+      // 将后端字段映射为前端格式
+      templates.value = result.data.map(item => ({
+        id: item.id,
+        name: item.template_name,
+        paperWidth: item.width,
+        paperHeight: item.height,
+        presetSize: item.preset_size,
+        createdAt: item.create_time,
+        updatedAt: item.update_time,
+        controls: [] // 控件数据在详情页获取
+      }))
     } else {
       message.error(result.echo || '获取模板列表失败')
     }

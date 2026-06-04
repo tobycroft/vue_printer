@@ -7,21 +7,74 @@
         </button>
         <h2>{{ isEditing ? '编辑模板' : '新建模板' }}</h2>
       </div>
+      <div class="header-center">
+        <div class="paper-settings-inline">
+          <div class="paper-input-group">
+            <label>模板名称</label>
+            <input 
+              v-model="currentTemplate.name" 
+              type="text" 
+              placeholder="请输入模板名称" 
+              class="form-control paper-name-input"
+            />
+          </div>
+          <div class="paper-input-group">
+            <label>宽度 (mm)</label>
+            <input 
+              v-model.number="currentTemplate.paperWidth" 
+              type="number" 
+              min="10" 
+              max="1000" 
+              class="form-control paper-size-input"
+            />
+          </div>
+          <div class="paper-input-group">
+            <label>高度 (mm)</label>
+            <input 
+              v-model.number="currentTemplate.paperHeight" 
+              type="number" 
+              min="10" 
+              max="1000" 
+              class="form-control paper-size-input"
+            />
+          </div>
+          <div class="paper-input-group">
+            <label>预设</label>
+            <select 
+              v-model="paperPreset" 
+              class="form-control paper-preset-select"
+              @change="applyPaperPreset(paperPreset)"
+            >
+              <option value="">自定义</option>
+              <option value="A4">A4 (210×297)</option>
+              <option value="A5">A5 (148×210)</option>
+              <option value="B5">B5 (176×250)</option>
+              <option value="Letter">Letter (216×279)</option>
+              <option value="BusinessCard">名片 (90×54)</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div class="header-right">
-        <button class="btn btn-primary" @click="previewTemplate" :disabled="loading">预览</button>
-        <button class="btn btn-primary" @click="saveTemplate" :disabled="loading || saving">
-          {{ saving ? '保存中...' : '保存模板' }}
+        <button class="btn btn-primary" @click="() => previewTemplate(lodopPreviewTemplate)" :disabled="loading || controlsLoading">预览</button>
+        <button class="btn btn-primary" @click="saveTemplate" :disabled="loading || saving || controlsLoading">
+          {{ saving || controlsLoading ? '保存中...' : '保存模板' }}
         </button>
       </div>
     </header>
 
     <div class="editor-main">
       <aside class="editor-sidebar">
-        <PaperSettings
-          :template="currentTemplate"
-          :paper-preset="paperPreset"
-          @update:template="updateTemplate"
-          @update:paper-preset="applyPaperPreset"
+        <ControlProperties
+          v-if="selectedControl"
+          :control="selectedControl"
+          @update="watchControlUpdates"
+          @delete="handleDeleteControl"
+        />
+
+        <WidgetList
+          :widgets="availableWidgets"
+          @drag-start="onDragStart"
         />
 
         <PrinterControls
@@ -30,38 +83,20 @@
           :load-error="loadError"
           @retry-load="loadLodopScript"
         />
-
-        <WidgetList
-          :widgets="availableWidgets"
-          @drag-start="onDragStart"
-        />
-
-        <ControlProperties
-          v-if="selectedControl"
-          :control="selectedControl"
-          @update="watchControlUpdates"
-          @delete="handleDeleteControl"
-        />
       </aside>
 
       <main class="editor-canvas">
-        <div class="canvas-toolbar">
-          <ZoomControls
-            :zoom="currentZoomPercent"
-            @zoom-in="zoomIn"
-            @zoom-out="zoomOut"
-            @reset-zoom="resetZoom"
-          />
-        </div>
-        <div class="canvas-wrapper">
+        <div class="canvas-wrapper" ref="canvasWrapperRef">
           <TemplateCanvas
             :template="currentTemplate"
             :selected-control="selectedControl"
             :paper-style="paperStyle"
+            :mm-to-px-ratio="currentMmToPxRatio"
             @drop="onDrop"
             @paper-click="onPaperClick"
             @control-select="selectControl"
             @control-drag-start="startDragControl"
+            @control-resize-start="startResizeControl"
           />
         </div>
       </main>
@@ -72,12 +107,10 @@
 <script setup>
 import { ref, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import PaperSettings from './components/PaperSettings.vue'
 import PrinterControls from './components/PrinterControls.vue'
 import WidgetList from './components/WidgetList.vue'
 import ControlProperties from './components/ControlProperties.vue'
 import TemplateCanvas from './components/TemplateCanvas.vue'
-import ZoomControls from './components/ZoomControls.vue'
 import useTemplateEditor from './composables/useTemplateEditor'
 import useControlOperations from './composables/useControlOperations'
 import useLodopIntegration from './composables/useLodopIntegration'
@@ -87,13 +120,27 @@ import './TemplateEditor.css'
 const route = useRoute()
 const router = useRouter()
 
-const isEditing = ref(!!route.params.id)
+console.log('TemplateEditor route:', route)
+console.log('route.query.id:', route.query.id)
+
+const isEditing = ref(!!route.query.id)
 const currentTemplate = reactive({
-  id: route.params.id || null,
+  id: route.query.id ? Number(route.query.id) : null,
   name: '',
   paperWidth: 210,
   paperHeight: 297,
   controls: []
+})
+
+console.log('currentTemplate.id initialized:', currentTemplate.id)
+
+// 监听路由 query 变化
+watch(() => route.query.id, (newId) => {
+  console.log('route.query.id changed:', newId)
+  if (newId) {
+    currentTemplate.id = Number(newId)
+    isEditing.value = true
+  }
 })
 
 const paperPreset = ref('')
@@ -119,20 +166,22 @@ const applyPaperPreset = (preset) => {
 // 使用组合式函数
 const {
   paperStyle,
+  currentMmToPxRatio,
+  canvasWrapperRef,
   selectedControl,
   availableWidgets,
   loading,
   saving,
-  currentZoomPercent,
-  zoomIn,
-  zoomOut,
-  resetZoom,
   goBack,
   saveTemplate,
   previewTemplate,
   updateTemplate,
   selectControl,
-  deleteSelectedControl
+  deleteSelectedControl,
+  handleUnmount,
+  setLoadControlsFn,
+  setSaveControlsFn,
+  loadTemplate
 } = useTemplateEditor(
   currentTemplate,
   isEditing,
@@ -144,49 +193,61 @@ const {
   onDrop,
   onPaperClick,
   startDragControl,
+  startResizeControl,
   watchControlUpdates,
   controlsLoading,
-  deleteControl
+  deleteControl,
+  loadControls,
+  saveControls
 } = useControlOperations(
   currentTemplate,
-  selectedControl
+  selectedControl,
+  currentMmToPxRatio
 )
+
+// 设置控件加载和保存函数
+setLoadControlsFn(loadControls)
+setSaveControlsFn(saveControls)
+
+// 监听路由变化，确保在 id 变化时重新加载
+watch(() => route.query.id, (newId) => {
+  console.log('Route query id changed:', newId)
+  if (newId) {
+    currentTemplate.id = Number(newId)
+    isEditing.value = true
+  }
+}, { immediate: true })
 
 const {
   scriptLoaded,
   scriptLoading,
   loadError,
-  loadLodopScript
+  loadLodopScript,
+  previewTemplate: lodopPreviewTemplate
 } = useLodopIntegration()
 
 const handleDeleteControl = async () => {
   if (selectedControl.value) {
     const controlId = selectedControl.value.id
-    // 先从本地删除
-    const index = currentTemplate.controls.findIndex(
-      c => c.id === selectedControl.value.id
-    )
-    if (index !== -1) {
-      currentTemplate.controls.splice(index, 1)
-      
-      // 再调用API删除
-      if (controlId) {
-        await deleteControl(controlId)
-      }
-      
-      selectedControl.value = null
-    }
+    // 直接调用 deleteControl 函数
+    await deleteControl(controlId)
   }
 }
 
 onMounted(() => {
-  // 如果是编辑模式，模板数据会在useTemplateEditor中自动加载
-  console.log('Template editor mounted, isEditing:', isEditing.value)
+  console.log('Template editor mounted, currentTemplate.id:', currentTemplate.id, 'isEditing:', isEditing.value)
+  
+  // 如果有 id，显式加载数据
+  if (currentTemplate.id) {
+    console.log('Explicitly loading template and controls...')
+    loadTemplate(loadControls)
+  }
   
   loadLodopScript()
 })
 
 onUnmounted(() => {
   // 清理逻辑
+  handleUnmount()
 })
 </script>

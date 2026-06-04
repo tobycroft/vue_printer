@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { templateApi } from '../api/template'
 import { message } from '../utils/message'
 
@@ -6,34 +6,69 @@ export default function useTemplateEditor(template, isEditing, router) {
   const selectedControl = ref(null)
   const loading = ref(false)
   const saving = ref(false)
-  const zoom = ref(1.0) // 默认缩放比例
   const userZoom = ref(1.0) // 用户手动设置的缩放
+  const canvasWrapperRef = ref(null)
+  const canvasSize = ref({ width: 800, height: 600 })
   
-  // 计算基础缩放比例，让纸张在画布中合适显示
-  const calculateBaseScale = () => {
-    const maxWidth = 400 // 画布最大显示宽度（像素）
-    const maxHeight = 400 // 画布最大显示高度（像素）
+  // 更新画布尺寸
+  const updateCanvasSize = () => {
+    nextTick(() => {
+      if (canvasWrapperRef.value) {
+        const wrapper = canvasWrapperRef.value
+        canvasSize.value = {
+          width: wrapper.clientWidth,
+          height: wrapper.clientHeight
+        }
+      }
+    })
+  }
+  
+  // 计算毫米到像素的转换比例，让纸张在画布中合适显示
+  const calculateMmToPxRatio = () => {
     const paperWidth = template.paperWidth
     const paperHeight = template.paperHeight
+    const isPortrait = paperHeight >= paperWidth // 判断是否是竖向纸张
     
-    // 计算让纸张在画布中合适显示的基础缩放
-    const scaleX = maxWidth / paperWidth
-    const scaleY = maxHeight / paperHeight
-    const baseScale = Math.min(scaleX, scaleY, 3.0) // 最大不超过3倍
+    // 画布可用尺寸（80%的空间）
+    const availableWidth = canvasSize.value.width * 0.8
+    const availableHeight = canvasSize.value.height * 0.8
     
-    return Math.max(baseScale, 0.3) // 最小0.3倍
+    let ratio
+    
+    if (isPortrait) {
+      // 竖向纸张：以高度为基准，放大到屏幕高度的80%
+      ratio = availableHeight / paperHeight
+      // 确保宽度不超过画布宽度的80%
+      const scaledWidth = paperWidth * ratio
+      if (scaledWidth > availableWidth) {
+        ratio = availableWidth / paperWidth
+      }
+    } else {
+      // 横向纸张：以宽度为基准，放大到屏幕宽度的80%
+      ratio = availableWidth / paperWidth
+      // 确保高度不超过画布高度的80%
+      const scaledHeight = paperHeight * ratio
+      if (scaledHeight > availableHeight) {
+        ratio = availableHeight / paperHeight
+      }
+    }
+    
+    // 限制最大和最小比例
+    return Math.max(Math.min(ratio, 10.0), 0.1)
   }
 
   const paperStyle = computed(() => {
-    const baseScale = calculateBaseScale()
-    const scale = baseScale * userZoom.value
+    const ratio = calculateMmToPxRatio() * userZoom.value
     
     return {
-      width: `${template.paperWidth}mm`,
-      height: `${template.paperHeight}mm`,
-      transform: `scale(${scale})`,
-      transformOrigin: 'center center'
+      width: `${template.paperWidth * ratio}px`,
+      height: `${template.paperHeight * ratio}px`
     }
+  })
+  
+  // 当前使用的毫米到像素转换比例
+  const currentMmToPxRatio = computed(() => {
+    return calculateMmToPxRatio() * userZoom.value
   })
 
   // 缩放控制函数
@@ -57,8 +92,7 @@ export default function useTemplateEditor(template, isEditing, router) {
   
   // 计算当前显示的缩放百分比
   const currentZoomPercent = computed(() => {
-    const baseScale = calculateBaseScale()
-    return Math.round(baseScale * userZoom.value * 100)
+    return Math.round(userZoom.value * 100)
   })
 
   const availableWidgets = [
@@ -72,7 +106,7 @@ export default function useTemplateEditor(template, isEditing, router) {
     router.push('/admin/templates')
   }
 
-  const saveTemplate = async () => {
+  const saveTemplate = async (saveControlsFn) => {
     if (!template.name.trim()) {
       message.warning('请输入模板名称')
       return
@@ -87,24 +121,38 @@ export default function useTemplateEditor(template, isEditing, router) {
         preset_size: '' // 可以根据需要添加预设尺寸
       }
 
-      if (isEditing.value) {
-        // 更新模板
-        const result = await templateApi.updateTemplate(template.id, templateData)
-        // go_printer返回的格式是{code:0, data:[], echo:''}
-        if (result.code === 0) {
-          message.success('模板更新成功')
-        } else {
-          message.error(result.echo || '模板更新失败')
-        }
-      } else {
-        // 创建模板
-        const result = await templateApi.createTemplate(templateData)
-        if (result.code === 0) {
-          template.id = result.data.id // 保存返回的模板ID
+      let savedSuccessfully = false
+
+      // 如果没有 id，先创建模板获取 id
+      if (!template.id) {
+        const createResult = await templateApi.createTemplate(templateData)
+        if (createResult.code === 0) {
+          template.id = createResult.data.id
           isEditing.value = true
           message.success('模板创建成功')
+          savedSuccessfully = true
         } else {
-          message.error(result.echo || '模板创建失败')
+          message.error(createResult.echo || '模板创建失败')
+          return
+        }
+      } else {
+        // 已有 id，直接更新
+        const result = await templateApi.updateTemplate(template.id, templateData)
+        if (result.code === 0) {
+          message.success('模板保存成功')
+          savedSuccessfully = true
+        } else {
+          message.error(result.echo || '模板保存失败')
+          return
+        }
+      }
+
+      // 只要保存成功，就调用 info/get 接口重新获取最新数据，并保存控件
+      if (savedSuccessfully) {
+        await loadTemplate(loadControlsFn)
+        // 保存控件
+        if (saveControlsFnInternal) {
+          await saveControlsFnInternal()
         }
       }
     } catch (error) {
@@ -115,10 +163,25 @@ export default function useTemplateEditor(template, isEditing, router) {
     }
   }
 
-  const previewTemplate = () => {
+  const previewTemplate = async (lodopPreviewFn) => {
     // 预览模板逻辑
     console.log('Previewing template:', template)
-    message.info('预览功能开发中...')
+    
+    if (!template.controls || template.controls.length === 0) {
+      message.warning('模板中没有控件，无法预览')
+      return
+    }
+    
+    if (typeof lodopPreviewFn === 'function') {
+      try {
+        await lodopPreviewFn(template)
+      } catch (error) {
+        console.error('预览失败:', error)
+        message.error('预览失败: ' + (error.message || '未知错误'))
+      }
+    } else {
+      message.info('预览功能未正确初始化')
+    }
   }
 
   const updateTemplate = (updates) => {
@@ -126,20 +189,32 @@ export default function useTemplateEditor(template, isEditing, router) {
   }
 
   // 加载模板数据
-  const loadTemplate = async () => {
-    if (!isEditing.value || !template.id) return
+  const loadTemplate = async (loadControlsFn) => {
+    console.log('loadTemplate called, template.id:', template.id)
+    if (!template.id) {
+      console.log('No template.id, skipping load')
+      return
+    }
 
     loading.value = true
     try {
+      console.log('Calling getTemplate with id:', template.id)
       const result = await templateApi.getTemplate(template.id)
+      console.log('getTemplate result:', result)
       // go_printer返回的格式是{code:0, data:[], echo:''}
       if (result.code === 0) {
         // 转换后端返回的数据格式
         template.name = result.data.template_name
         template.paperWidth = result.data.width
         template.paperHeight = result.data.height
+        console.log('Template data filled:', template)
         // 如果有预设尺寸，可以在这里设置
         // template.presetSize = result.data.preset_size
+        
+        // 加载控件
+        if (loadControlsFn) {
+          await loadControlsFn()
+        }
       } else {
         message.error(result.echo || '加载模板失败')
       }
@@ -151,9 +226,38 @@ export default function useTemplateEditor(template, isEditing, router) {
     }
   }
 
+  let loadControlsFn = null
+
+  const setLoadControlsFn = (fn) => {
+    loadControlsFn = fn
+  }
+
+  let saveControlsFnInternal = null
+
+  const setSaveControlsFn = (fn) => {
+    saveControlsFnInternal = fn
+  }
+
   onMounted(() => {
-    loadTemplate()
+    console.log('useTemplateEditor onMounted, template.id:', template.id)
+    updateCanvasSize()
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', updateCanvasSize)
   })
+
+  // 监听模板 id 变化，只要有 id 就加载数据（包括初始值）
+  watch(() => template.id, (newId) => {
+    console.log('watch template.id changed, newId:', newId)
+    if (newId) {
+      loadTemplate(loadControlsFn)
+    }
+  }, { immediate: true })
+  
+  // 清理事件监听
+  const handleUnmount = () => {
+    window.removeEventListener('resize', updateCanvasSize)
+  }
 
   const selectControl = (control) => {
     selectedControl.value = control
@@ -173,6 +277,8 @@ export default function useTemplateEditor(template, isEditing, router) {
 
   return {
     paperStyle,
+    currentMmToPxRatio,
+    canvasWrapperRef,
     selectedControl,
     availableWidgets,
     loading,
@@ -186,6 +292,10 @@ export default function useTemplateEditor(template, isEditing, router) {
     previewTemplate,
     updateTemplate,
     selectControl,
-    deleteSelectedControl
+    deleteSelectedControl,
+    handleUnmount,
+    setLoadControlsFn,
+    setSaveControlsFn,
+    loadTemplate
   }
 }

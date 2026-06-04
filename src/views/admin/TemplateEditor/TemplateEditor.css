@@ -13,36 +13,113 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 8px 20px;
   background-color: #2d2d2d;
   border-bottom: 1px solid #3d3d3d;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
-  height: 60px;
+  height: 56px;
   box-sizing: border-box;
+  gap: 16px;
 }
 
 .editor-header .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .editor-header .header-left .back-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
 }
 
 .editor-header .header-left h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #ffffff;
+  white-space: nowrap;
+}
+
+.editor-header .header-center {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
 }
 
 .editor-header .header-right {
   display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* 顶部栏纸张设置内联样式 */
+.paper-settings-inline {
+  display: flex;
+  align-items: flex-end;
   gap: 12px;
+  background-color: rgba(0, 0, 0, 0.15);
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.paper-settings-inline .paper-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paper-settings-inline .paper-input-group label {
+  font-size: 11px;
+  color: #999999;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.paper-settings-inline .paper-input-group .form-control {
+  background-color: #3d3d3d;
+  border: 1px solid #4d4d4d;
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  height: 28px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.paper-settings-inline .paper-input-group .form-control:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.paper-settings-inline .paper-name-input {
+  width: 200px;
+  min-width: 120px;
+  max-width: 280px;
+}
+
+.paper-settings-inline .paper-size-input {
+  width: 60px;
+  text-align: center;
+}
+
+.paper-settings-inline .paper-preset-select {
+  width: 130px;
+  cursor: pointer;
+}
+
+.paper-settings-inline .paper-input-group input::-webkit-inner-spin-button,
+.paper-settings-inline .paper-input-group input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .editor-main {
@@ -286,7 +363,6 @@
   position: absolute;
   display: flex;
   align-items: center;
-  justify-content: center;
   background-color: rgba(255, 255, 255, 0.9);
   border: 2px solid transparent;
   cursor: move;
@@ -295,6 +371,22 @@
   color: #303133;
   overflow: hidden;
   user-select: none;
+}
+
+/* 文本控件的对齐样式 */
+.editor-canvas .control-item[data-align="left"] {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.editor-canvas .control-item[data-align="center"] {
+  justify-content: center;
+  text-align: center;
+}
+
+.editor-canvas .control-item[data-align="right"] {
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .editor-canvas .control-item.selected {
