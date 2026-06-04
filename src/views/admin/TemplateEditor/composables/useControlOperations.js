@@ -35,19 +35,20 @@ export default function useControlOperations(template, selectedControl) {
     const actualY = Math.round(y / scale)
 
     try {
-      // 创建控件数据
-      const controlData = createControlData(draggedWidget.value.type, actualX, actualY)
-      controlData.template_id = template.id
-      
-      // 调用API创建控件
-      const result = await templateDetailApi.addTemplateDetail(controlData)
-      
-      // 添加到本地数组
-      const newControl = mapApiControlToLocal(result)
-      template.controls.push(newControl)
-      
-      message.success('控件添加成功')
-    } catch (error) {
+        const controlData = createControlData(draggedWidget.value.type, actualX, actualY)
+        controlData.template_id = template.id
+        
+        const result = await templateDetailApi.addTemplateDetail(controlData)
+        
+        // go_printer返回的格式是{code:0, data:[], echo:''}
+        if (result.code === 0) {
+          const newControl = mapApiControlToLocal(result.data)
+          template.controls.push(newControl)
+          message.success('控件添加成功')
+        } else {
+          message.error(result.echo || '添加控件失败')
+        }
+      } catch (error) {
       message.error(error.message || '添加控件失败')
       console.error('Add control error:', error)
     } finally {
@@ -264,26 +265,35 @@ export default function useControlOperations(template, selectedControl) {
     
     controlsLoading.value = true
     try {
-      const result = await templateDetailApi.getTemplateDetails(template.id)
-      // 转换为本地格式
-      template.controls = result.map(mapApiControlToLocal)
-    } catch (error) {
-      message.error(error.message || '加载控件失败')
-      console.error('Load controls error:', error)
-    } finally {
-      controlsLoading.value = false
+        const result = await templateDetailApi.getTemplateDetails(template.id)
+        // go_printer返回的格式是{code:0, data:[], echo:''}
+        if (result.code === 0) {
+          template.controls = result.data.map(mapApiControlToLocal)
+        } else {
+          message.error(result.echo || '加载控件失败')
+        }
+      } catch (error) {
+        message.error(error.message || '加载控件失败')
+        console.error('Load controls error:', error)
+      } finally {
+        loadingControls.value = false
+      }
     }
-  }
-
+  
   // 删除控件
   const deleteControl = async (controlId) => {
     try {
-      await templateDetailApi.deleteTemplateDetail(controlId)
-      message.success('控件删除成功')
-    } catch (error) {
-      message.error(error.message || '删除控件失败')
-      console.error('Delete control error:', error)
-    }
+        const result = await templateDetailApi.deleteTemplateDetail(controlId)
+        // go_printer返回的格式是{code:0, data:[], echo:''}
+        if (result.code === 0) {
+          message.success('控件删除成功')
+        } else {
+          message.error(result.echo || '删除控件失败')
+        }
+      } catch (error) {
+        message.error(error.message || '删除控件失败')
+        console.error('Delete control error:', error)
+      }
   }
 
   onMounted(() => {

@@ -42,14 +42,23 @@ export default function useTemplateEditor(template, isEditing, router) {
 
       if (isEditing.value) {
         // 更新模板
-        await templateApi.updateTemplate(template.id, templateData)
-        message.success('模板更新成功')
+        const result = await templateApi.updateTemplate(template.id, templateData)
+        // go_printer返回的格式是{code:0, data:[], echo:''}
+        if (result.code === 0) {
+          message.success('模板更新成功')
+        } else {
+          message.error(result.echo || '模板更新失败')
+        }
       } else {
         // 创建模板
         const result = await templateApi.createTemplate(templateData)
-        template.id = result.id // 保存返回的模板ID
-        isEditing.value = true
-        message.success('模板创建成功')
+        if (result.code === 0) {
+          template.id = result.data.id // 保存返回的模板ID
+          isEditing.value = true
+          message.success('模板创建成功')
+        } else {
+          message.error(result.echo || '模板创建失败')
+        }
       }
     } catch (error) {
       message.error(error.message || '保存模板失败')
@@ -76,12 +85,17 @@ export default function useTemplateEditor(template, isEditing, router) {
     loading.value = true
     try {
       const result = await templateApi.getTemplate(template.id)
-      // 转换后端返回的数据格式
-      template.name = result.template_name
-      template.paperWidth = result.width
-      template.paperHeight = result.height
-      // 如果有预设尺寸，可以在这里设置
-      // template.presetSize = result.preset_size
+      // go_printer返回的格式是{code:0, data:[], echo:''}
+      if (result.code === 0) {
+        // 转换后端返回的数据格式
+        template.name = result.data.template_name
+        template.paperWidth = result.data.width
+        template.paperHeight = result.data.height
+        // 如果有预设尺寸，可以在这里设置
+        // template.presetSize = result.data.preset_size
+      } else {
+        message.error(result.echo || '加载模板失败')
+      }
     } catch (error) {
       message.error(error.message || '加载模板失败')
       console.error('Load template error:', error)

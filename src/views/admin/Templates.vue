@@ -71,8 +71,12 @@ const formatDate = (timestamp) => {
 const fetchTemplates = async () => {
   try {
     const result = await templateApi.getTemplates()
-    // 假设后端返回的格式是数组或者包含list字段
-    templates.value = Array.isArray(result) ? result : result.list || []
+    // go_printer返回的格式是{code:0, data:[], echo:''}
+    if (result.code === 0) {
+      templates.value = result.data
+    } else {
+      message.error(result.echo || '获取模板列表失败')
+    }
   } catch (error) {
     console.error('获取模板列表失败:', error)
     message.error(error.message || '获取模板列表失败')
@@ -100,10 +104,10 @@ const goToEditor = async (templateId = '') => {
       })
       
       // 使用返回的template_id进入编辑页面
-      if (result.id) {
-        window.location.href = `#/template-editor?id=${result.id}`
+      if (result.code === 0 && result.data && result.data.id) {
+        window.location.href = `#/template-editor?id=${result.data.id}`
       } else {
-        message.error('创建模板失败：未获取到模板ID')
+        message.error(result.echo || '创建模板失败：未获取到模板ID')
       }
     } catch (error) {
       console.error('创建模板失败:', error)
@@ -118,13 +122,17 @@ const deleteTemplate = async (id) => {
   }
   
   try {
-    await templateApi.deleteTemplate(id)
-    await fetchTemplates()
-    message.success('模板删除成功')
-  } catch (error) {
-    console.error('删除模板失败:', error)
-    message.error(error.message || '删除失败')
-  }
+        const result = await templateApi.deleteTemplate(id)
+        if (result.code === 0) {
+          await fetchTemplates()
+          message.success('模板删除成功')
+        } else {
+          message.error(result.echo || '删除失败')
+        }
+      } catch (error) {
+        console.error('删除模板失败:', error)
+        message.error(error.message || '删除失败')
+      }
 }
 
 onMounted(() => {
