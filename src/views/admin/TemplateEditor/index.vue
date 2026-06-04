@@ -47,7 +47,7 @@
       <main class="editor-canvas">
         <div class="canvas-toolbar">
           <ZoomControls
-            :zoom="zoom"
+            :zoom="currentZoomPercent"
             @zoom-in="zoomIn"
             @zoom-out="zoomOut"
             @reset-zoom="resetZoom"
@@ -123,7 +123,7 @@ const {
   availableWidgets,
   loading,
   saving,
-  zoom,
+  currentZoomPercent,
   zoomIn,
   zoomOut,
   resetZoom,

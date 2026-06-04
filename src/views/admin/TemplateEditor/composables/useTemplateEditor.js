@@ -6,41 +6,60 @@ export default function useTemplateEditor(template, isEditing, router) {
   const selectedControl = ref(null)
   const loading = ref(false)
   const saving = ref(false)
-  const zoom = ref(1.5) // 默认缩放比例，小尺寸纸张显示更大
+  const zoom = ref(1.0) // 默认缩放比例
+  const userZoom = ref(1.0) // 用户手动设置的缩放
+  
+  // 计算基础缩放比例，让纸张在画布中合适显示
+  const calculateBaseScale = () => {
+    const maxWidth = 400 // 画布最大显示宽度（像素）
+    const maxHeight = 400 // 画布最大显示高度（像素）
+    const paperWidth = template.paperWidth
+    const paperHeight = template.paperHeight
+    
+    // 计算让纸张在画布中合适显示的基础缩放
+    const scaleX = maxWidth / paperWidth
+    const scaleY = maxHeight / paperHeight
+    const baseScale = Math.min(scaleX, scaleY, 3.0) // 最大不超过3倍
+    
+    return Math.max(baseScale, 0.3) // 最小0.3倍
+  }
 
   const paperStyle = computed(() => {
-    // 动态计算缩放比例，确保小尺寸纸张显示足够大
-    let scale = zoom.value
-    // 如果纸张尺寸很小，自动调整缩放
-    if (template.paperWidth < 100 || template.paperHeight < 100) {
-      scale = zoom.value * 1.5
-    }
+    const baseScale = calculateBaseScale()
+    const scale = baseScale * userZoom.value
+    
     return {
       width: `${template.paperWidth}mm`,
       height: `${template.paperHeight}mm`,
       transform: `scale(${scale})`,
-      transformOrigin: 'center top'
+      transformOrigin: 'center center'
     }
   })
 
   // 缩放控制函数
   const setZoom = (newZoom) => {
-    if (newZoom >= 0.5 && newZoom <= 3) {
-      zoom.value = newZoom
+    if (newZoom >= 0.3 && newZoom <= 3.0) {
+      userZoom.value = newZoom
     }
   }
 
   const zoomIn = () => {
-    setZoom(zoom.value + 0.25)
+    setZoom(userZoom.value + 0.25)
   }
 
   const zoomOut = () => {
-    setZoom(zoom.value - 0.25)
+    setZoom(userZoom.value - 0.25)
   }
 
   const resetZoom = () => {
-    zoom.value = 1.5
+    userZoom.value = 1.0
   }
+  
+  // 计算当前显示的缩放百分比
+  const currentZoomPercent = computed(() => {
+    const baseScale = calculateBaseScale()
+    return Math.round(baseScale * userZoom.value * 100)
+  })
 
   const availableWidgets = [
     { type: 'text', name: '固定文本', icon: '📝' },
@@ -158,7 +177,7 @@ export default function useTemplateEditor(template, isEditing, router) {
     availableWidgets,
     loading,
     saving,
-    zoom,
+    currentZoomPercent,
     zoomIn,
     zoomOut,
     resetZoom,
