@@ -53,7 +53,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { storageService } from '@/services/storageService'
+import { templateApi } from './TemplateEditor/api/template'
+import { message } from './TemplateEditor/utils/message'
 
 const templates = ref([])
 
@@ -69,20 +70,45 @@ const formatDate = (timestamp) => {
 
 const fetchTemplates = async () => {
   try {
-    const result = await storageService.getTemplates()
-    if (result.success) {
-      templates.value = result.data
-    }
+    const result = await templateApi.getTemplates()
+    // 假设后端返回的格式是数组或者包含list字段
+    templates.value = Array.isArray(result) ? result : result.list || []
   } catch (error) {
     console.error('获取模板列表失败:', error)
+    message.error(error.message || '获取模板列表失败')
   }
 }
 
-const goToEditor = (templateId = '') => {
+const goToEditor = async (templateId = '') => {
   if (templateId) {
     window.location.href = `#/template-editor?id=${templateId}`
   } else {
-    window.location.href = '#/template-editor'
+    // 新建模板：先调用add接口创建模板
+    try {
+      // 生成默认模板名称：默认模板+日期
+      const now = new Date()
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '')
+      const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '')
+      const defaultName = `默认模板${dateStr}${timeStr}`
+      
+      // 创建模板
+      const result = await templateApi.createTemplate({
+        template_name: defaultName,
+        width: 210,
+        height: 297,
+        preset_size: 'A4'
+      })
+      
+      // 使用返回的template_id进入编辑页面
+      if (result.id) {
+        window.location.href = `#/template-editor?id=${result.id}`
+      } else {
+        message.error('创建模板失败：未获取到模板ID')
+      }
+    } catch (error) {
+      console.error('创建模板失败:', error)
+      message.error(error.message || '创建模板失败')
+    }
   }
 }
 
@@ -92,16 +118,12 @@ const deleteTemplate = async (id) => {
   }
   
   try {
-    const result = await storageService.deleteTemplate(id)
-    if (result.success) {
-      await fetchTemplates()
-      alert('模板删除成功')
-    } else {
-      alert(result.message || '删除失败')
-    }
+    await templateApi.deleteTemplate(id)
+    await fetchTemplates()
+    message.success('模板删除成功')
   } catch (error) {
     console.error('删除模板失败:', error)
-    alert('删除失败')
+    message.error(error.message || '删除失败')
   }
 }
 
