@@ -8,7 +8,7 @@ import Printers from '../views/admin/Printers.vue'
 import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
 import SystemSettings from '../views/admin/SystemSettings.vue'
-import TemplateEditor from '../views/admin/TemplateEditor.vue'
+import TemplateEditor from '../views/admin/TemplateEditor/index.vue'
 
 const routes = [
   {
