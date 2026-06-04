@@ -117,10 +117,6 @@ const goToEditor = async (templateId = '') => {
 }
 
 const deleteTemplate = async (id) => {
-  if (!confirm('确定要删除该模板吗？')) {
-    return
-  }
-  
   try {
         const result = await templateApi.deleteTemplate(id)
         if (result.code === 0) {

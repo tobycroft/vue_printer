@@ -1,19 +1,21 @@
-// 简单的消息提示工具，替代Element Plus的ElMessage
+// 使用toast消息提示工具，替代alert
+import toast from './toast'
+
 export const message = {
   success: (msg) => {
-    alert(`成功: ${msg}`)
+    toast.success(msg)
     console.log('Success:', msg)
   },
   warning: (msg) => {
-    alert(`警告: ${msg}`)
+    toast.warning(msg)
     console.warn('Warning:', msg)
   },
   error: (msg) => {
-    alert(`错误: ${msg}`)
+    toast.error(msg)
     console.error('Error:', msg)
   },
   info: (msg) => {
-    alert(`提示: ${msg}`)
+    toast.info(msg)
     console.info('Info:', msg)
   }
 }
