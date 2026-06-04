@@ -87,6 +87,24 @@ const currentTemplate = reactive({
 
 const paperPreset = ref('')
 
+// 纸张预设尺寸映射
+const presetSizes = {
+  'A4': { width: 210, height: 297 },
+  'A5': { width: 148, height: 210 },
+  'B5': { width: 176, height: 250 },
+  'Letter': { width: 216, height: 279 },
+  'BusinessCard': { width: 90, height: 54 }
+}
+
+// 应用纸张预设
+const applyPaperPreset = (preset) => {
+  paperPreset.value = preset
+  if (presetSizes[preset]) {
+    currentTemplate.paperWidth = presetSizes[preset].width
+    currentTemplate.paperHeight = presetSizes[preset].height
+  }
+}
+
 // 使用组合式函数
 const {
   paperStyle,
@@ -125,24 +143,6 @@ const {
   loadError,
   loadLodopScript
 } = useLodopIntegration()
-
-// 监听纸张预设变化
-watch(() => paperPreset.value, (newPreset) => {
-  if (newPreset) {
-    const presetSizes = {
-      'A4': { width: 210, height: 297 },
-      'A5': { width: 148, height: 210 },
-      'B5': { width: 176, height: 250 },
-      'Letter': { width: 216, height: 279 },
-      'BusinessCard': { width: 90, height: 54 }
-    }
-    
-    if (presetSizes[newPreset]) {
-      currentTemplate.paperWidth = presetSizes[newPreset].width
-      currentTemplate.paperHeight = presetSizes[newPreset].height
-    }
-  }
-})
 
 const handleDeleteControl = async () => {
   if (selectedControl.value) {

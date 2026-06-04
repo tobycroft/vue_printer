@@ -64,7 +64,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:template', 'update:paper-preset'])
+const emit = defineEmits(['update:paper-preset'])
 
 const localPaperPreset = ref(props.paperPreset)
 
