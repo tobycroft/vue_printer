@@ -1,6 +1,6 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { templateDetailApi } from '../api/template'
-import { ElMessage } from 'element-plus'
+import { message } from '../utils/message'
 
 export default function useControlOperations(template, selectedControl) {
   const draggedWidget = ref(null)
@@ -21,7 +21,7 @@ export default function useControlOperations(template, selectedControl) {
     
     if (!draggedWidget.value) return
     if (!template.id) {
-      ElMessage.warning('请先保存模板，再添加控件')
+      message.warning('请先保存模板，再添加控件')
       return
     }
 
@@ -46,9 +46,9 @@ export default function useControlOperations(template, selectedControl) {
       const newControl = mapApiControlToLocal(result)
       template.controls.push(newControl)
       
-      ElMessage.success('控件添加成功')
+      message.success('控件添加成功')
     } catch (error) {
-      ElMessage.error(error.message || '添加控件失败')
+      message.error(error.message || '添加控件失败')
       console.error('Add control error:', error)
     } finally {
       draggedWidget.value = null
@@ -268,7 +268,7 @@ export default function useControlOperations(template, selectedControl) {
       // 转换为本地格式
       template.controls = result.map(mapApiControlToLocal)
     } catch (error) {
-      ElMessage.error(error.message || '加载控件失败')
+      message.error(error.message || '加载控件失败')
       console.error('Load controls error:', error)
     } finally {
       controlsLoading.value = false
@@ -279,9 +279,9 @@ export default function useControlOperations(template, selectedControl) {
   const deleteControl = async (controlId) => {
     try {
       await templateDetailApi.deleteTemplateDetail(controlId)
-      ElMessage.success('控件删除成功')
+      message.success('控件删除成功')
     } catch (error) {
-      ElMessage.error(error.message || '删除控件失败')
+      message.error(error.message || '删除控件失败')
       console.error('Delete control error:', error)
     }
   }

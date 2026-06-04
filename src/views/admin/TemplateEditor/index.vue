@@ -71,7 +71,7 @@ import useTemplateEditor from './composables/useTemplateEditor'
 import useControlOperations from './composables/useControlOperations'
 import useLodopIntegration from './composables/useLodopIntegration'
 
-import './TemplateEditor.scss'
+import './TemplateEditor.css'
 
 const route = useRoute()
 const router = useRouter()

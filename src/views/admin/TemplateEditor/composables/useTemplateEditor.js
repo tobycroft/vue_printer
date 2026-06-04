@@ -1,6 +1,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { templateApi } from '../api/template'
-import { ElMessage } from 'element-plus'
+import { message } from '../utils/message'
 
 export default function useTemplateEditor(template, isEditing, router) {
   const selectedControl = ref(null)
@@ -27,7 +27,7 @@ export default function useTemplateEditor(template, isEditing, router) {
 
   const saveTemplate = async () => {
     if (!template.name.trim()) {
-      ElMessage.warning('请输入模板名称')
+      message.warning('请输入模板名称')
       return
     }
 
@@ -43,16 +43,16 @@ export default function useTemplateEditor(template, isEditing, router) {
       if (isEditing.value) {
         // 更新模板
         await templateApi.updateTemplate(template.id, templateData)
-        ElMessage.success('模板更新成功')
+        message.success('模板更新成功')
       } else {
         // 创建模板
         const result = await templateApi.createTemplate(templateData)
         template.id = result.id // 保存返回的模板ID
         isEditing.value = true
-        ElMessage.success('模板创建成功')
+        message.success('模板创建成功')
       }
     } catch (error) {
-      ElMessage.error(error.message || '保存模板失败')
+      message.error(error.message || '保存模板失败')
       console.error('Save template error:', error)
     } finally {
       saving.value = false
@@ -62,7 +62,7 @@ export default function useTemplateEditor(template, isEditing, router) {
   const previewTemplate = () => {
     // 预览模板逻辑
     console.log('Previewing template:', template)
-    ElMessage.info('预览功能开发中...')
+    message.info('预览功能开发中...')
   }
 
   const updateTemplate = (updates) => {
@@ -83,7 +83,7 @@ export default function useTemplateEditor(template, isEditing, router) {
       // 如果有预设尺寸，可以在这里设置
       // template.presetSize = result.preset_size
     } catch (error) {
-      ElMessage.error(error.message || '加载模板失败')
+      message.error(error.message || '加载模板失败')
       console.error('Load template error:', error)
     } finally {
       loading.value = false

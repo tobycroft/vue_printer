@@ -56,6 +56,15 @@ export default defineConfig(({ mode }) => {
   const isExtensionBuild = mode === 'extension'
   
   return {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8080', // go_printer默认端口
+          changeOrigin: true,
+          secure: false
+        }
+      }
+    },
     plugins: [
       vue(),
       {

@@ -1,47 +1,14 @@
-import axios from 'axios'
+import { fetchApi } from '../utils/fetch'
 
 // 创建API实例
-const api = axios.create({
-  baseURL: '/api/v1', // 假设API前缀是/api/v1
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
-
-// 请求拦截器 - 添加token
-api.interceptors.request.use(
-  (config) => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`
-      config.headers['token'] = token // 有些后端可能直接用token字段
-    }
-    return config
+const api = {
+  post: (url, data = {}) => {
+    return fetchApi.post(`/api/v1${url}`, data)
   },
-  (error) => {
-    return Promise.reject(error)
+  get: (url, params = {}) => {
+    return fetchApi.get(`/api/v1${url}`, params)
   }
-)
-
-// 响应拦截器 - 处理错误
-api.interceptors.response.use(
-  (response) => {
-    // 假设后端返回格式：{ code: 0, data: {}, msg: '' }
-    const res = response.data
-    if (res.code !== 0 && res.code !== 200) {
-      // 处理错误
-      console.error('API Error:', res.msg || '请求失败')
-      return Promise.reject(new Error(res.msg || '请求失败'))
-    }
-    return res.data || res
-  },
-  (error) => {
-    console.error('Network Error:', error.message)
-    return Promise.reject(error)
-  }
-)
+}
 
 // 模板相关API
 export const templateApi = {
