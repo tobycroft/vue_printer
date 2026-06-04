@@ -356,7 +356,7 @@
   right: 0;
   bottom: 0;
   border: 1px dashed rgba(64, 158, 255, 0.3);
-  pointer-point-events: none;
+  pointer-events: none;
 }
 
 .editor-canvas .control-item {
