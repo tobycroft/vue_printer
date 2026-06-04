@@ -229,14 +229,28 @@
 .editor-canvas {
   flex: 1;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 24px;
-  overflow: auto;
+  flex-direction: column;
   background-color: #1a1a1a;
   width: calc(100% - 320px);
   height: calc(100vh - 60px);
   box-sizing: border-box;
+}
+
+.canvas-toolbar {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.canvas-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
 }
 
 .editor-canvas .canvas-container {

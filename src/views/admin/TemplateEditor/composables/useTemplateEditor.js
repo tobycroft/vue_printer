@@ -6,13 +6,41 @@ export default function useTemplateEditor(template, isEditing, router) {
   const selectedControl = ref(null)
   const loading = ref(false)
   const saving = ref(false)
+  const zoom = ref(1.5) // 默认缩放比例，小尺寸纸张显示更大
 
-  const paperStyle = computed(() => ({
-    width: `${template.paperWidth}mm`,
-    height: `${template.paperHeight}mm`,
-    transform: 'scale(0.8)',
-    transformOrigin: 'center top'
-  }))
+  const paperStyle = computed(() => {
+    // 动态计算缩放比例，确保小尺寸纸张显示足够大
+    let scale = zoom.value
+    // 如果纸张尺寸很小，自动调整缩放
+    if (template.paperWidth < 100 || template.paperHeight < 100) {
+      scale = zoom.value * 1.5
+    }
+    return {
+      width: `${template.paperWidth}mm`,
+      height: `${template.paperHeight}mm`,
+      transform: `scale(${scale})`,
+      transformOrigin: 'center top'
+    }
+  })
+
+  // 缩放控制函数
+  const setZoom = (newZoom) => {
+    if (newZoom >= 0.5 && newZoom <= 3) {
+      zoom.value = newZoom
+    }
+  }
+
+  const zoomIn = () => {
+    setZoom(zoom.value + 0.25)
+  }
+
+  const zoomOut = () => {
+    setZoom(zoom.value - 0.25)
+  }
+
+  const resetZoom = () => {
+    zoom.value = 1.5
+  }
 
   const availableWidgets = [
     { type: 'text', name: '固定文本', icon: '📝' },
@@ -130,6 +158,10 @@ export default function useTemplateEditor(template, isEditing, router) {
     availableWidgets,
     loading,
     saving,
+    zoom,
+    zoomIn,
+    zoomOut,
+    resetZoom,
     goBack,
     saveTemplate,
     previewTemplate,

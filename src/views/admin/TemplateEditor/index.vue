@@ -45,15 +45,25 @@
       </aside>
 
       <main class="editor-canvas">
-        <TemplateCanvas
-          :template="currentTemplate"
-          :selected-control="selectedControl"
-          :paper-style="paperStyle"
-          @drop="onDrop"
-          @paper-click="onPaperClick"
-          @control-select="selectControl"
-          @control-drag-start="startDragControl"
-        />
+        <div class="canvas-toolbar">
+          <ZoomControls
+            :zoom="zoom"
+            @zoom-in="zoomIn"
+            @zoom-out="zoomOut"
+            @reset-zoom="resetZoom"
+          />
+        </div>
+        <div class="canvas-wrapper">
+          <TemplateCanvas
+            :template="currentTemplate"
+            :selected-control="selectedControl"
+            :paper-style="paperStyle"
+            @drop="onDrop"
+            @paper-click="onPaperClick"
+            @control-select="selectControl"
+            @control-drag-start="startDragControl"
+          />
+        </div>
       </main>
     </div>
   </div>
@@ -67,6 +77,7 @@ import PrinterControls from './components/PrinterControls.vue'
 import WidgetList from './components/WidgetList.vue'
 import ControlProperties from './components/ControlProperties.vue'
 import TemplateCanvas from './components/TemplateCanvas.vue'
+import ZoomControls from './components/ZoomControls.vue'
 import useTemplateEditor from './composables/useTemplateEditor'
 import useControlOperations from './composables/useControlOperations'
 import useLodopIntegration from './composables/useLodopIntegration'
@@ -112,6 +123,10 @@ const {
   availableWidgets,
   loading,
   saving,
+  zoom,
+  zoomIn,
+  zoomOut,
+  resetZoom,
   goBack,
   saveTemplate,
   previewTemplate,
