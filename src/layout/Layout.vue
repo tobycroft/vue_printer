@@ -44,8 +44,7 @@ const menus = ref([
   { path: '/admin/printers', title: '所有打印机', icon: '📋' },
   { path: '/admin/templates', title: '打印模板管理', icon: '📄' },
   { path: '/admin/system-settings', title: '系统设置', icon: '⚙️' },
-  { path: '/admin/help', title: '帮助', icon: '❓' },
-  { path: '/admin/about', title: '关于', icon: '️' }
+  { path: '/admin/about', title: '关于', icon: 'ℹ️' }
 ])
 </script>
 

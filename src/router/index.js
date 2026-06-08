@@ -3,7 +3,7 @@ import Layout from '../layout/Layout.vue'
 import Home from '../views/admin/Home.vue'
 import UserInfo from '../views/admin/UserInfo.vue'
 import About from '../views/admin/About.vue'
-import Help from '../views/admin/Help.vue'
+
 import Printers from '../views/admin/Printers.vue'
 import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
@@ -60,12 +60,6 @@ const routes = [
         name: 'About',
         component: About,
         meta: { title: '关于' }
-      },
-      {
-        path: 'help',
-        name: 'Help',
-        component: Help,
-        meta: { title: '帮助' }
       }
     ]
   },
