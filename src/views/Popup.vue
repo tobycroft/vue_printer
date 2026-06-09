@@ -14,10 +14,17 @@
         </div>
       </div>
       <div class="status-item">
-        <div class="status-icon connected"></div>
+        <div :class="['status-icon', wsStatus.class]"></div>
+        <div class="status-info">
+          <div class="status-label">实时推送</div>
+          <div class="status-desc">{{ wsStatus.text }}</div>
+        </div>
+      </div>
+      <div class="status-item">
+        <div :class="['status-icon', lodopStatus.class]"></div>
         <div class="status-info">
           <div class="status-label">打印服务</div>
-          <div class="status-desc">运行正常</div>
+          <div class="status-desc">{{ lodopStatus.text }}</div>
         </div>
       </div>
       <div class="status-item">
@@ -35,16 +42,26 @@
     </div>
 
     <div class="footer">
-      <p class="footer-text">Vue Printer v1.0.0</p>
+      <p class="footer-text">Vue Printer v1.1.0</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getUserInfo, checkServerConnectivity } from '@/services/apiService'
 
 const serverStatus = ref({
+  class: 'checking',
+  text: '检查中...'
+})
+
+const wsStatus = ref({
+  class: 'checking',
+  text: '检查中...'
+})
+
+const lodopStatus = ref({
   class: 'checking',
   text: '检查中...'
 })
@@ -54,17 +71,79 @@ const userStatus = ref({
   text: '检查中...'
 })
 
+let wsStateUnsubscribe = null
+
 onMounted(() => {
   checkAuthStatus()
   updateStatusDisplay()
+  setupWebSocketListener()
 })
+
+onUnmounted(() => {
+  if (wsStateUnsubscribe) {
+    wsStateUnsubscribe()
+  }
+})
+
+// 设置 WebSocket 状态监听
+function setupWebSocketListener() {
+  // 立即获取一次状态
+  checkWebSocketState()
+
+  // 监听状态变化
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'websocketStateChange') {
+      updateWsStatus(message.state)
+    }
+    return false
+  })
+}
+
+// 检查 WebSocket 状态
+async function checkWebSocketState() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'wsGetState' })
+    if (response) {
+      updateWsStatus(response.state)
+    }
+  } catch (error) {
+    wsStatus.value = {
+      class: 'disconnected',
+      text: '未连接'
+    }
+  }
+}
+
+// 更新 WebSocket 状态显示
+function updateWsStatus(state) {
+  switch (state) {
+    case 'connected':
+      wsStatus.value = {
+        class: 'connected',
+        text: '已连接'
+      }
+      break
+    case 'connecting':
+      wsStatus.value = {
+        class: 'checking',
+        text: '连接中...'
+      }
+      break
+    case 'disconnected':
+    default:
+      wsStatus.value = {
+        class: 'disconnected',
+        text: '未连接'
+      }
+  }
+}
 
 // 检查认证状态
 async function checkAuthStatus() {
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data')
     const userData = result.vue_printer_user_data
-    
+
     if (!userData || Date.now() > userData.expiresAt) {
       // 未登录或Token过期，跳转到登录界面
       window.location.href = 'auth.html'
@@ -80,15 +159,25 @@ async function checkServer() {
   return await checkServerConnectivity(3000)
 }
 
+// 检测 C-LODOP 状态
+async function checkLodop() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'checkLodopStatus' })
+    return response?.installed || false
+  } catch (error) {
+    return false
+  }
+}
+
 // 获取用户信息
 async function getUserInfoData(userData) {
   if (!userData || !userData.token || !userData.uid) {
     return null
   }
-  
+
   try {
     const result = await getUserInfo(userData.uid, userData.token)
-    
+
     if (result.success) {
       return result.data
     } else if (result.message && result.message.includes('未登录')) {
@@ -97,7 +186,7 @@ async function getUserInfoData(userData) {
       await handleLogout(false)
       return null
     }
-    
+
     return null
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -120,16 +209,30 @@ async function updateStatusDisplay() {
       text: '未连接'
     }
   }
-  
+
+  // C-LODOP 状态
+  const isLodopInstalled = await checkLodop()
+  if (isLodopInstalled) {
+    lodopStatus.value = {
+      class: 'connected',
+      text: '运行正常'
+    }
+  } else {
+    lodopStatus.value = {
+      class: 'disconnected',
+      text: '未安装'
+    }
+  }
+
   // 用户状态
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data')
     const userData = result.vue_printer_user_data
-    
+
     if (userData && Date.now() < userData.expiresAt) {
       // 尝试获取用户信息
       const userInfo = await getUserInfoData(userData)
-      
+
       if (userInfo) {
         if (userInfo.username) {
           userStatus.value = {
@@ -184,7 +287,7 @@ async function openSettings() {
   try {
     const result = await chrome.storage.local.get('vue_printer_user_data')
     const userData = result.vue_printer_user_data
-    
+
     if (userData && Date.now() < userData.expiresAt) {
       // 已登录，在新标签页打开管理后台页面
       chrome.tabs.create({ url: chrome.runtime.getURL('index.html#/admin/home') })
@@ -204,7 +307,7 @@ async function handleLogout(showConfirm = true) {
   if (showConfirm && !confirm('确定要退出登录吗？')) {
     return
   }
-  
+
   try {
     await chrome.storage.local.remove('vue_printer_user_data')
     window.location.href = 'auth.html'
