@@ -36,10 +36,8 @@ class WebSocketManager {
           .replace(/^http:/, 'ws:')
           .replace(/^https:/, 'wss:');
         
-        // 确保 URL 以 /ws 结尾
-        if (!wsUrl.endsWith('/ws')) {
-          wsUrl = wsUrl.replace(/\/$/, '') + '/ws';
-        }
+        // 移除末尾的斜杠，使用根路径连接（与 HTTP 共用路径）
+        wsUrl = wsUrl.replace(/\/$/, '');
         
         console.log('[WS] 连接 URL:', wsUrl);
         resolve(wsUrl);
