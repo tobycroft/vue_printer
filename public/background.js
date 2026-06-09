@@ -9,6 +9,8 @@ const LODOP_PORT = 8000;
 // ============================================
 // WebSocket 连接管理
 // ============================================
+const MAX_WS_LOGS = 100;
+
 class WebSocketManager {
   constructor() {
     this.ws = null;
@@ -21,6 +23,45 @@ class WebSocketManager {
     this.heartbeatInterval = 30000;
     this.connectionState = 'disconnected';
     this.messageHandlers = new Map();
+    this.logs = [];
+  }
+
+  /**
+   * 添加一条日志（最多保留 MAX_WS_LOGS 条）
+   */
+  addLog(type, content) {
+    const log = {
+      id: Date.now() + Math.random(),
+      time: new Date().toLocaleString(),
+      timestamp: Date.now(),
+      type,
+      content
+    };
+    this.logs.push(log);
+    if (this.logs.length > MAX_WS_LOGS) {
+      this.logs.shift();
+    }
+    // 通知前端有新日志
+    try {
+      chrome.runtime.sendMessage({
+        action: 'websocketLogAdded',
+        log
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  /**
+   * 获取当前所有日志
+   */
+  getLogs() {
+    return this.logs;
+  }
+
+  /**
+   * 清空日志
+   */
+  clearLogs() {
+    this.logs = [];
   }
 
   /**
@@ -70,7 +111,7 @@ class WebSocketManager {
    */
   async connect() {
     if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-      console.log('[WS] 连接已存在');
+      this.addLog('info', '连接已存在，跳过');
       return;
     }
 
@@ -82,16 +123,16 @@ class WebSocketManager {
       const authInfo = await this.getAuthInfo();
 
       if (!authInfo.isAuthenticated) {
-        console.log('[WS] 用户未登录，跳过连接');
+        this.addLog('warning', '用户未登录，跳过连接');
         this.connectionState = 'disconnected';
         return;
       }
 
-      console.log(`[WS] 连接到: ${wsUrl}`);
+      this.addLog('info', `连接到: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('[WS] 连接已建立');
+        this.addLog('success', '连接已建立');
         this.connectionState = 'connected';
         this.reconnectAttempts = 0;
 
@@ -111,7 +152,7 @@ class WebSocketManager {
       };
 
       this.ws.onclose = (event) => {
-        console.log(`[WS] 连接关闭 (code: ${event.code}, reason: ${event.reason || '无'})`);
+        this.addLog('error', `连接关闭 (code: ${event.code}, reason: ${event.reason || '无'})`);
         this.connectionState = 'disconnected';
         this.stopHeartbeat();
         this.broadcastState();
@@ -121,14 +162,13 @@ class WebSocketManager {
       };
 
       this.ws.onerror = (error) => {
-        console.error('[WS] 连接错误:', error);
-        console.error('[WS] 当前状态:', this.ws ? this.ws.readyState : 'null');
+        this.addLog('error', `连接错误: ${error?.message || error}`);
         this.connectionState = 'disconnected';
         this.broadcastState();
       };
 
     } catch (error) {
-      console.error('[WS] 连接失败:', error);
+      this.addLog('error', `连接失败: ${error?.message || error}`);
       this.connectionState = 'disconnected';
       this.scheduleReconnect();
     }
@@ -138,6 +178,7 @@ class WebSocketManager {
    * 断开连接
    */
   disconnect() {
+    this.addLog('info', '主动断开连接');
     this.isManualClose = true;
     this.stopHeartbeat();
     if (this.reconnectTimer) {
@@ -157,7 +198,12 @@ class WebSocketManager {
    */
   send(data) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(typeof data === 'string' ? data : JSON.stringify(data));
+      const str = typeof data === 'string' ? data : JSON.stringify(data);
+      this.ws.send(str);
+      // 心跳消息不打日志，避免刷屏
+      if (typeof data === 'object' && data.route !== 'ping' && data.route !== 'pong') {
+        this.addLog('send', typeof data === 'object' ? JSON.stringify(data) : data);
+      }
       return true;
     }
     return false;
@@ -169,22 +215,25 @@ class WebSocketManager {
   handleMessage(data) {
     try {
       const message = JSON.parse(data);
-      console.log('[WS] 收到:', message);
-
-      if (message.route === 'print_task') {
-        this.handlePrintTask(message);
-      } else if (message.route === 'ping') {
+      // 心跳消息不打日志
+      if (message.route === 'ping') {
         this.send({ route: 'pong' });
+      } else {
+        this.addLog('recv', JSON.stringify(message));
+
+        if (message.route === 'print_task') {
+          this.handlePrintTask(message);
+        }
+
+        // 广播给所有监听者
+        chrome.runtime.sendMessage({
+          action: 'websocketMessage',
+          data: message
+        }).catch(() => {});
       }
 
-      // 广播给所有监听者
-      chrome.runtime.sendMessage({
-        action: 'websocketMessage',
-        data: message
-      }).catch(() => {});
-
     } catch (error) {
-      console.error('[WS] 消息解析错误:', error);
+      this.addLog('error', `消息解析错误: ${error?.message || error}`);
     }
   }
 
@@ -269,13 +318,13 @@ class WebSocketManager {
   scheduleReconnect() {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('[WS] 达到最大重连次数');
+      this.addLog('warning', '达到最大重连次数，停止自动重连');
       return;
     }
 
     this.reconnectAttempts++;
     const delay = Math.min(this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1), 60000);
-    console.log(`[WS] ${delay / 1000}s后重连(${this.reconnectAttempts})`);
+    this.addLog('info', `${delay / 1000}s后重连(${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => this.connect(), delay);
   }
@@ -459,6 +508,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'wsSend') {
     const sent = wsManager.send(request.data);
     sendResponse({ success: sent });
+    return true;
+  }
+
+  // WebSocket 日志查询
+  if (request.action === 'wsGetLogs') {
+    sendResponse({ success: true, logs: wsManager.getLogs() });
+    return true;
+  }
+
+  if (request.action === 'wsClearLogs') {
+    wsManager.clearLogs();
+    sendResponse({ success: true });
     return true;
   }
 

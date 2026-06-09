@@ -8,6 +8,7 @@ import Printers from '../views/admin/Printers.vue'
 import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
 import SystemSettings from '../views/admin/SystemSettings.vue'
+import WebSocketLog from '../views/admin/WebSocketLog.vue'
 import TemplateEditor from '../views/admin/TemplateEditor/TemplateEditor.vue'
 
 const routes = [
@@ -54,6 +55,12 @@ const routes = [
         name: 'SystemSettings',
         component: SystemSettings,
         meta: { title: '系统设置' }
+      },
+      {
+        path: 'websocket-log',
+        name: 'WebSocketLog',
+        component: WebSocketLog,
+        meta: { title: 'WebSocket 日志' }
       },
       {
         path: 'about',
