@@ -30,12 +30,18 @@ class WebSocketManager {
     return new Promise((resolve) => {
       chrome.storage.local.get(['api_base_url'], (result) => {
         let baseUrl = result.api_base_url || 'https://printapi.tuuz.ltd:444';
+        
+        // 将 HTTP/HTTPS 转换为 WS/WSS
         let wsUrl = baseUrl
-          .replace(/^http/, 'ws')
-          .replace(/^https/, 'wss');
-        if (!wsUrl.includes('/ws')) {
-          wsUrl = wsUrl + '/ws';
+          .replace(/^http:/, 'ws:')
+          .replace(/^https:/, 'wss:');
+        
+        // 确保 URL 以 /ws 结尾
+        if (!wsUrl.endsWith('/ws')) {
+          wsUrl = wsUrl.replace(/\/$/, '') + '/ws';
         }
+        
+        console.log('[WS] 连接 URL:', wsUrl);
         resolve(wsUrl);
       });
     });
