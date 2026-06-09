@@ -77,6 +77,8 @@ onMounted(() => {
   checkAuthStatus()
   updateStatusDisplay()
   setupWebSocketListener()
+  // 打开 popup 时主动尝试连接 WebSocket
+  connectWebSocket()
 })
 
 onUnmounted(() => {
@@ -111,6 +113,25 @@ async function checkWebSocketState() {
       class: 'disconnected',
       text: '未连接'
     }
+  }
+}
+
+// 主动连接 WebSocket
+async function connectWebSocket() {
+  try {
+    // 先检查用户是否已登录
+    const result = await chrome.storage.local.get('vue_printer_user_data')
+    const userData = result.vue_printer_user_data
+
+    if (userData && Date.now() < userData.expiresAt) {
+      // 用户已登录，尝试连接 WebSocket
+      console.log('[Popup] 用户已登录，尝试连接 WebSocket')
+      await chrome.runtime.sendMessage({ action: 'wsConnect' })
+    } else {
+      console.log('[Popup] 用户未登录，跳过 WebSocket 连接')
+    }
+  } catch (error) {
+    console.error('[Popup] 连接 WebSocket 失败:', error)
   }
 }
 

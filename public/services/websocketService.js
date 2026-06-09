@@ -32,11 +32,10 @@ class WebSocketService {
           .replace(/^http/, 'ws')
           .replace(/^https/, 'wss');
         
-        // 确保 URL 以 /ws 结尾或包含正确的路径
-        if (!wsUrl.includes('/ws')) {
-          wsUrl = wsUrl + '/ws';
-        }
+        // 移除末尾的斜杠，使用根路径连接
+        wsUrl = wsUrl.replace(/\/$/, '');
         
+        console.log('[WebSocket] 连接 URL:', wsUrl);
         resolve(wsUrl);
       });
     });
