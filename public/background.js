@@ -284,6 +284,7 @@ class WebSocketManager {
    * 广播状态
    */
   broadcastState() {
+    updateExtensionBadge(this.connectionState);
     chrome.runtime.sendMessage({
       action: 'websocketStateChange',
       state: this.connectionState
@@ -300,6 +301,122 @@ class WebSocketManager {
 
 // 创建 WebSocket 管理器实例
 const wsManager = new WebSocketManager();
+
+// ============================================
+// 扩展图标角标管理
+// ============================================
+/**
+ * 检查登录状态
+ */
+function checkLoggedIn(callback) {
+  chrome.storage.local.get(['vue_printer_user_data'], (result) => {
+    const userData = result.vue_printer_user_data;
+    const isLoggedIn = !!(userData && Date.now() < userData.expiresAt);
+    callback(isLoggedIn);
+  });
+}
+
+/**
+ * 更新浏览器工具栏中的扩展图标角标
+ */
+function updateExtensionBadge(wsState) {
+  checkLoggedIn((isLoggedIn) => {
+    let badgeText = '';
+    let badgeColor = [117, 117, 117, 255]; // 灰色
+    let titleText = 'Vue Printer';
+
+    if (!isLoggedIn) {
+      badgeText = '?';
+      badgeColor = [117, 117, 117, 255]; // 灰色
+      titleText = 'Vue Printer - 未登录';
+    } else if (wsState === 'connected') {
+      badgeText = '✓';
+      badgeColor = [76, 175, 80, 255]; // 绿色 #4CAF50
+      titleText = 'Vue Printer - 实时推送已连接';
+    } else if (wsState === 'connecting') {
+      badgeText = '◌';
+      badgeColor = [255, 152, 0, 255]; // 橙色 #FF9800
+      titleText = 'Vue Printer - 正在连接...';
+    } else {
+      badgeText = '✗';
+      badgeColor = [244, 67, 54, 255]; // 红色 #f44336
+      titleText = 'Vue Printer - 实时推送未连接';
+    }
+
+    try {
+      chrome.action.setBadgeText({ text: badgeText });
+      chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+      chrome.action.setTitle({ title: titleText });
+    } catch (e) {
+      console.error('[Badge] 更新角标失败:', e);
+    }
+  });
+}
+
+/**
+ * 初始化扩展：设置默认存储、初始化角标、创建保活 alarm、尝试连接 WebSocket
+ */
+function initializeExtension() {
+  // 初始化角标
+  updateExtensionBadge(wsManager.connectionState);
+
+  // 创建保活 alarm：每 1 分钟唤醒一次 service worker，避免被系统休眠
+  chrome.alarms.create('keep-alive', { periodInMinutes: 1 });
+
+  // 尝试连接 WebSocket（已登录用户）
+  wsManager.connect();
+}
+
+// 扩展安装/更新时初始化
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.set({
+    printTemplates: [],
+    pendingPrintTasks: [],
+    settings: {
+      defaultPrinter: '',
+      paperSize: 'A4',
+      orientation: 'portrait',
+      margin: { top: 20, right: 20, bottom: 20, left: 20 }
+    }
+  });
+  initializeExtension();
+  console.log('[BG] Vue Printer 已安装/更新');
+});
+
+// 浏览器启动时初始化
+chrome.runtime.onStartup.addListener(() => {
+  initializeExtension();
+  console.log('[BG] Vue Printer 已启动');
+});
+
+// 监听 alarm：定期检查 WebSocket 连接状态，必要时重连
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'keep-alive') {
+    // 如果已登录但 WebSocket 未连接，尝试重连
+    checkLoggedIn((isLoggedIn) => {
+      if (isLoggedIn && wsManager.connectionState !== 'connected') {
+        console.log('[BG] 保活 alarm：检测到 WebSocket 未连接，尝试重连');
+        wsManager.connect();
+      } else {
+        updateExtensionBadge(wsManager.connectionState);
+      }
+    });
+  }
+});
+
+// 监听登录状态变化（用户登录/登出时更新角标并连接/断开 WebSocket）
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.vue_printer_user_data) {
+    const newData = changes.vue_printer_user_data.newValue;
+    if (newData && newData.token && Date.now() < newData.expiresAt) {
+      console.log('[BG] 用户已登录，启动 WebSocket 并更新角标');
+      wsManager.connect();
+    } else {
+      console.log('[BG] 用户未登录或已过期，断开 WebSocket 并更新角标');
+      wsManager.disconnect();
+    }
+  }
+});
 
 // ============================================
 // C-LODOP 检测
@@ -430,43 +547,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   return false;
-});
-
-// ============================================
-// 生命周期事件
-// ============================================
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({
-    printTemplates: [],
-    pendingPrintTasks: [],
-    settings: {
-      defaultPrinter: '',
-      paperSize: 'A4',
-      orientation: 'portrait',
-      margin: { top: 20, right: 20, bottom: 20, left: 20 }
-    }
-  });
-  console.log('Vue Printer Extension installed');
-});
-
-chrome.runtime.onStartup.addListener(() => {
-  console.log('Vue Printer Extension started');
-  // 浏览器启动时尝试连接 WebSocket
-  wsManager.connect();
-});
-
-// 监听存储变化，当用户登录时自动连接
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.vue_printer_user_data) {
-    const newData = changes.vue_printer_user_data.newValue;
-    if (newData && newData.token && Date.now() < newData.expiresAt) {
-      console.log('[Background] 用户已登录，启动 WebSocket');
-      wsManager.connect();
-    } else {
-      console.log('[Background] 用户未登录或已过期，断开 WebSocket');
-      wsManager.disconnect();
-    }
-  }
 });
 
 // 点击扩展图标

@@ -2,12 +2,7 @@
   <div class="admin-layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="logo-icon-wrapper">
-          <div class="logo-icon">🖨️</div>
-          <div class="logo-status" :class="logoStatus.class" :title="logoStatus.tooltip">
-            {{ logoStatus.icon }}
-          </div>
-        </div>
+        <div class="logo-icon">🖨️</div>
         <h2>Vue Printer</h2>
         <div class="version">v1.0.0</div>
       </div>
@@ -49,10 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-
-// 登录状态
-const isLoggedIn = ref(false)
+import { ref, onMounted } from 'vue'
 
 // WebSocket 状态
 const wsStatus = ref({
@@ -61,31 +53,6 @@ const wsStatus = ref({
   text: '未连接',
   tooltip: 'WebSocket 未连接'
 })
-
-// Logo 状态：结合登录和 WebSocket 状态
-const logoStatus = computed(() => {
-  if (!isLoggedIn.value) {
-    return { icon: '?', class: 'status-not-logged-in', tooltip: '未登录' }
-  }
-  if (wsStatus.value.state === 'connected') {
-    return { icon: '✓', class: 'status-connected', tooltip: '已登录 · WebSocket 已连接' }
-  }
-  if (wsStatus.value.state === 'connecting') {
-    return { icon: '◌', class: 'status-connecting', tooltip: '已登录 · WebSocket 连接中...' }
-  }
-  return { icon: '✗', class: 'status-disconnected', tooltip: '已登录 · WebSocket 未连接' }
-})
-
-// 检查登录状态
-async function checkAuthStatus() {
-  try {
-    const result = await chrome.storage.local.get('vue_printer_user_data')
-    const userData = result.vue_printer_user_data
-    isLoggedIn.value = !!(userData && Date.now() < userData.expiresAt)
-  } catch (error) {
-    isLoggedIn.value = false
-  }
-}
 
 // 获取 WebSocket 状态
 async function checkWebSocketState() {
@@ -96,6 +63,19 @@ async function checkWebSocketState() {
     }
   } catch (error) {
     updateWsStatus('disconnected')
+  }
+}
+
+// 尝试连接 WebSocket
+async function tryConnectWebSocket() {
+  try {
+    const result = await chrome.storage.local.get('vue_printer_user_data')
+    const userData = result.vue_printer_user_data
+    if (userData && Date.now() < userData.expiresAt) {
+      await chrome.runtime.sendMessage({ action: 'wsConnect' })
+    }
+  } catch (error) {
+    console.error('[Layout] 连接 WebSocket 失败:', error)
   }
 }
 
@@ -151,15 +131,9 @@ function setupWebSocketListener() {
 }
 
 onMounted(() => {
-  checkAuthStatus()
   checkWebSocketState()
   setupWebSocketListener()
-  // 监听登录状态变化
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.vue_printer_user_data) {
-      checkAuthStatus()
-    }
-  })
+  tryConnectWebSocket()
 })
 
 const menus = ref([
@@ -203,51 +177,9 @@ const menus = ref([
   margin-bottom: 40px;
 }
 
-.logo-icon-wrapper {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 10px;
-}
-
 .logo-icon {
   font-size: 48px;
-}
-
-.logo-status {
-  position: absolute;
-  bottom: -4px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  border: 2px solid #2d2d2d;
-  transition: all 0.3s;
-}
-
-.logo-status.status-connected {
-  background: #4CAF50;
-  color: #ffffff;
-}
-
-.logo-status.status-connecting {
-  background: #FF9800;
-  color: #ffffff;
-  animation: pulse 1s infinite;
-}
-
-.logo-status.status-disconnected {
-  background: #f44336;
-  color: #ffffff;
-}
-
-.logo-status.status-not-logged-in {
-  background: #757575;
-  color: #ffffff;
+  margin-bottom: 10px;
 }
 
 .sidebar-header h2 {
