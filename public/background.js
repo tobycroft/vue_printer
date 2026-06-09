@@ -113,7 +113,7 @@ class WebSocketManager {
       };
 
       this.ws.onclose = (event) => {
-        console.log(`[WS] 连接关闭 (code: ${event.code})`);
+        console.log(`[WS] 连接关闭 (code: ${event.code}, reason: ${event.reason || '无'})`);
         this.connectionState = 'disconnected';
         this.stopHeartbeat();
         this.broadcastState();
@@ -123,7 +123,8 @@ class WebSocketManager {
       };
 
       this.ws.onerror = (error) => {
-        console.error('[WS] 错误:', error);
+        console.error('[WS] 连接错误:', error);
+        console.error('[WS] 当前状态:', this.ws ? this.ws.readyState : 'null');
         this.connectionState = 'disconnected';
         this.broadcastState();
       };
