@@ -239,6 +239,14 @@ const fetchOrders = async () => {
     })
 
     if (result.success) {
+      // 检查是否登录失效
+      if (result.data && result.data.code === '10008') {
+        error.value = '🔒 ' + (result.data.msg || '登录信息已失效，请重新登录')
+        loginStatus.value.isLoggedIn = false
+        orders.value = []
+        return
+      }
+      
       // 解析订单数据 - API 返回结构: { data: [订单数组] }
       let orderData = []
       
