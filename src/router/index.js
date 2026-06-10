@@ -9,6 +9,7 @@ import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
 import SystemSettings from '../views/admin/SystemSettings.vue'
 import WebSocketLog from '../views/admin/WebSocketLog.vue'
+import DouDianAssistant from '../views/admin/DouDianAssistant.vue'
 import TemplateEditor from '../views/admin/TemplateEditor/TemplateEditor.vue'
 
 const routes = [
@@ -55,6 +56,12 @@ const routes = [
         name: 'SystemSettings',
         component: SystemSettings,
         meta: { title: '系统设置' }
+      },
+      {
+        path: 'doudian-assistant',
+        name: 'DouDianAssistant',
+        component: DouDianAssistant,
+        meta: { title: '抖店助手' }
       },
       {
         path: 'websocket-log',

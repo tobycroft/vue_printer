@@ -71,13 +71,10 @@ const userStatus = ref({
   text: '检查中...'
 })
 
-let wsStateUnsubscribe = null
-
 onMounted(() => {
   checkAuthStatus()
   updateStatusDisplay()
   setupWebSocketListener()
-  // 打开 popup 时主动尝试连接 WebSocket
   connectWebSocket()
 })
 
@@ -87,12 +84,12 @@ onUnmounted(() => {
   }
 })
 
+let wsStateUnsubscribe = null
+
 // 设置 WebSocket 状态监听
 function setupWebSocketListener() {
-  // 立即获取一次状态
   checkWebSocketState()
 
-  // 监听状态变化
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'websocketStateChange') {
       updateWsStatus(message.state)
@@ -119,12 +116,10 @@ async function checkWebSocketState() {
 // 主动连接 WebSocket
 async function connectWebSocket() {
   try {
-    // 先检查用户是否已登录
     const result = await chrome.storage.local.get('vue_printer_user_data')
     const userData = result.vue_printer_user_data
 
     if (userData && Date.now() < userData.expiresAt) {
-      // 用户已登录，尝试连接 WebSocket
       console.log('[Popup] 用户已登录，尝试连接 WebSocket')
       await chrome.runtime.sendMessage({ action: 'wsConnect' })
     } else {

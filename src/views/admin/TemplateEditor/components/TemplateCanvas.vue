@@ -148,6 +148,18 @@ const getControlStyle = (control) => {
     })
   }
 
+  if (control.type === 'image') {
+    Object.assign(style, {
+      backgroundColor: '#f0f0f0',
+      border: '1px dashed #999',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#666',
+      fontSize: '12px'
+    })
+  }
+
   return style
 }
 </script>

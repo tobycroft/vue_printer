@@ -8,12 +8,14 @@
     "activeTab",
     "scripting",
     "tabs",
-    "alarms"
+    "alarms",
+    "cookies"
   ],
   "host_permissions": [
     "<all_urls>",
     "ws://*/*",
-    "wss://*/*"
+    "wss://*/*",
+    "https://*.jinritemai.com/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval' http://127.0.0.1:*; object-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss: http: https:"

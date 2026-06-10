@@ -607,6 +607,98 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // 抖音电商 Cookie 获取
+  if (request.action === 'getJinriCookies') {
+    chrome.cookies.getAll({
+      domain: '.jinritemai.com'
+    }, (cookies) => {
+      sendResponse({ success: true, cookies: cookies });
+    });
+    return true;
+  }
+
+  // 抖音电商 API 请求（使用已有 Cookie）
+  if (request.action === 'jinriApiRequest') {
+    const { url, method = 'GET', body = null } = request;
+    
+    // 获取抖音电商的 Cookie
+    chrome.cookies.getAll({
+      domain: '.jinritemai.com'
+    }, async (cookies) => {
+      if (!cookies || cookies.length === 0) {
+        sendResponse({ success: false, error: '未找到抖音电商 Cookie，请先登录 jinritemai.com' });
+        return;
+      }
+
+      // 将 Cookie 转换为请求头格式
+      const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+      
+      try {
+        const options = {
+          method: method,
+          headers: {
+            'Cookie': cookieString,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://fxg.jinritemai.com/',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+          },
+          credentials: 'include'
+        };
+
+        if (body && method !== 'GET') {
+          options.body = typeof body === 'string' ? body : JSON.stringify(body);
+          options.headers['Content-Type'] = 'application/json';
+        }
+
+        const response = await fetch(url, options);
+        const data = await response.text();
+        
+        // 尝试解析为 JSON，如果失败则返回原始文本
+        let parsedData = data;
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          // 不是 JSON，保持原样
+        }
+
+        sendResponse({ 
+          success: true, 
+          status: response.status,
+          statusText: response.statusText,
+          data: parsedData,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+    });
+    return true;
+  }
+
+  // 检查抖音电商登录状态
+  if (request.action === 'checkJinriLogin') {
+    chrome.cookies.getAll({
+      domain: '.jinritemai.com'
+    }, (cookies) => {
+      // 检查是否包含必要的登录 Cookie
+      const cookieNames = cookies.map(c => c.name);
+      const hasLoginCookie = cookieNames.some(name => 
+        name.includes('sessionid') || 
+        name.includes('sid') || 
+        name.includes('token') ||
+        name.includes('ssologin')
+      );
+      
+      sendResponse({ 
+        success: true, 
+        isLoggedIn: hasLoginCookie && cookies.length > 0,
+        cookieCount: cookies.length
+      });
+    });
+    return true;
+  }
+
   return false;
 });
 
