@@ -64,21 +64,40 @@ class JinriApiService {
   /**
    * 获取订单列表
    * @param {object} params - 查询参数
+   * @param {number} params.page - 页码，默认 0
+   * @param {number} params.pageSize - 每页数量，默认 10
+   * @param {string} params.tab - 订单状态分组：'all' | 'stock_up' | 'on_delivery' | 'unpaid'
    */
   async getOrderList(params = {}) {
-    const defaultParams = {
-      page: 0,
-      pageSize: 10,
-      order_by: 'create_time',
+    const tab = params.tab || 'all';
+
+    // 根据 tab 类型决定 order_status 与 order_by 字段
+    // all: 全部订单，不需要 order_status，按 create_time 排序
+    // stock_up: 等待发货，order_status=stock_up，按 create_time 排序
+    // on_delivery: 已发货，order_status=on_delivery，按 ship_time 排序
+    // unpaid: 待支付，order_status=unpaid，按 create_time 排序
+    let orderBy = 'create_time';
+    if (tab === 'on_delivery') {
+      orderBy = 'ship_time';
+    }
+
+    const baseParams = {
+      page: params.page ?? 0,
+      pageSize: params.pageSize ?? 10,
+      order_by: orderBy,
       order: 'desc',
-      tab: 'all',
+      tab: tab,
       appid: 1,
       _bid: 'ffa_order',
       aid: 4272
     };
 
-    const mergedParams = { ...defaultParams, ...params };
-    const queryString = new URLSearchParams(mergedParams).toString();
+    // 非 all 的 tab，额外加上 order_status
+    if (tab !== 'all') {
+      baseParams.order_status = tab;
+    }
+
+    const queryString = new URLSearchParams(baseParams).toString();
     const url = `${this.baseUrl}/api/order/searchlist?${queryString}`;
 
     return this.request(url, 'GET');

@@ -677,24 +677,78 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // 检查抖音电商登录状态
+  // 注意：不能仅通过 Cookie 是否存在来判断，Cookie 可能已过期
+  // 必须通过实际调用接口验证 Cookie 的有效性
   if (request.action === 'checkJinriLogin') {
     chrome.cookies.getAll({
       domain: '.jinritemai.com'
-    }, (cookies) => {
-      // 检查是否包含必要的登录 Cookie
-      const cookieNames = cookies.map(c => c.name);
-      const hasLoginCookie = cookieNames.some(name => 
-        name.includes('sessionid') || 
-        name.includes('sid') || 
-        name.includes('token') ||
-        name.includes('ssologin')
-      );
-      
-      sendResponse({ 
-        success: true, 
-        isLoggedIn: hasLoginCookie && cookies.length > 0,
-        cookieCount: cookies.length
-      });
+    }, async (cookies) => {
+      if (!cookies || cookies.length === 0) {
+        sendResponse({ success: true, isLoggedIn: false, cookieCount: 0 });
+        return;
+      }
+
+      // 将 Cookie 转换为请求头格式
+      const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+
+      try {
+        // 调用一个轻量级接口验证 Cookie 是否有效
+        // 使用订单搜索接口但带极小参数，或者使用用户信息相关接口
+        const checkUrl = 'https://fxg.jinritemai.com/api/order/searchlist?page=0&pageSize=1&order_by=create_time&order=desc&tab=all&appid=1&_bid=ffa_order&aid=4272';
+
+        const response = await fetch(checkUrl, {
+          method: 'GET',
+          headers: {
+            'Cookie': cookieString,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://fxg.jinritemai.com/',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
+          },
+          credentials: 'include'
+        });
+
+        const data = await response.text();
+        let parsedData = null;
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          // 不是 JSON，保持原样
+        }
+
+        // 判断登录状态：
+        // 1. 如果返回 code 为 '10008'，表示登录失效
+        // 2. 如果返回 code 为 '0' 或 '10000'，表示登录有效
+        // 3. 其他情况根据是否有 data 来判断
+        let isLoggedIn = false;
+
+        if (parsedData && typeof parsedData === 'object') {
+          const respCode = String(parsedData.code || parsedData.status || '');
+          if (respCode === '10008') {
+            isLoggedIn = false;
+          } else if (respCode === '0' || respCode === '10000') {
+            isLoggedIn = true;
+          } else if (parsedData.data !== undefined) {
+            isLoggedIn = true;
+          }
+        }
+
+        sendResponse({
+          success: true,
+          isLoggedIn: isLoggedIn,
+          cookieCount: cookies.length,
+          code: parsedData?.code,
+          msg: parsedData?.msg
+        });
+      } catch (error) {
+        // 网络错误等情况下，保守判断为未登录
+        sendResponse({
+          success: true,
+          isLoggedIn: false,
+          cookieCount: cookies.length,
+          error: error.message
+        });
+      }
     });
     return true;
   }

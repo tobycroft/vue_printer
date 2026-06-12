@@ -8,40 +8,129 @@
     <div class="status-card">
       <div class="status-item">
         <span class="status-label">登录状态：</span>
-        <span :class="['status-value', loginStatus.isLoggedIn ? 'success' : 'error']">
+        <span v-if="checking" class="status-value checking">
+          <span class="loading-spinner-inline">⟳</span> 验证中...
+        </span>
+        <span v-else :class="['status-value', loginStatus.isLoggedIn ? 'success' : 'error']">
           {{ loginStatus.isLoggedIn ? '已登录' : '未登录' }}
         </span>
-        <span v-if="loginStatus.isLoggedIn" class="cookie-count">
+        <span v-if="loginStatus.isLoggedIn && !checking" class="cookie-count">
           ({{ loginStatus.cookieCount }} 个 Cookie)
         </span>
       </div>
-      <div v-if="!loginStatus.isLoggedIn" class="login-tip">
+      <!-- 调试信息：显示接口返回的原始 code 和 msg -->
+      <div v-if="debugInfo.code !== null" class="debug-info">
+        <small>接口返回: code={{ debugInfo.code }}, msg={{ debugInfo.msg || '无' }}</small>
+      </div>
+      <div v-if="!loginStatus.isLoggedIn && !checking" class="login-tip">
         <p>⚠️ 请先访问 <a href="https://fxg.jinritemai.com" target="_blank">fxg.jinritemai.com</a> 登录抖音电商</p>
       </div>
     </div>
 
     <div class="action-section">
-      <button 
-        class="btn-fetch" 
-        @click="fetchOrders"
+      <button
+        class="btn-tab"
+        :class="activeTab === 'all' ? 'active' : ''"
+        @click="fetchOrders('all')"
         :disabled="loading || !loginStatus.isLoggedIn"
       >
-        <span v-if="loading" class="loading-spinner">⟳</span>
-        {{ loading ? '获取中...' : '获取订单数据' }}
+        <span v-if="loading && activeTab === 'all'" class="loading-spinner">⟳</span>
+        {{ loading && activeTab === 'all' ? '获取中...' : '📋 全部订单' }}
+      </button>
+      <button
+        class="btn-tab btn-warn"
+        :class="activeTab === 'stock_up' ? 'active' : ''"
+        @click="fetchOrders('stock_up')"
+        :disabled="loading || !loginStatus.isLoggedIn"
+      >
+        <span v-if="loading && activeTab === 'stock_up'" class="loading-spinner">⟳</span>
+        {{ loading && activeTab === 'stock_up' ? '获取中...' : '📦 等待发货' }}
+      </button>
+      <button
+        class="btn-tab btn-info"
+        :class="activeTab === 'on_delivery' ? 'active' : ''"
+        @click="fetchOrders('on_delivery')"
+        :disabled="loading || !loginStatus.isLoggedIn"
+      >
+        <span v-if="loading && activeTab === 'on_delivery'" class="loading-spinner">⟳</span>
+        {{ loading && activeTab === 'on_delivery' ? '获取中...' : '🚚 已发货' }}
+      </button>
+      <button
+        class="btn-tab btn-danger"
+        :class="activeTab === 'unpaid' ? 'active' : ''"
+        @click="fetchOrders('unpaid')"
+        :disabled="loading || !loginStatus.isLoggedIn"
+      >
+        <span v-if="loading && activeTab === 'unpaid'" class="loading-spinner">⟳</span>
+        {{ loading && activeTab === 'unpaid' ? '获取中...' : '💰 待支付' }}
       </button>
       <button 
         class="btn-refresh" 
         @click="checkLoginStatus"
         :disabled="checking"
       >
-        {{ checking ? '检查中...' : '刷新登录状态' }}
+        {{ checking ? '检查中...' : '🔄 刷新登录' }}
       </button>
     </div>
 
-    <div class="data-section" v-if="orders.length > 0">
+    <div class="data-section" v-if="orders.length > 0 || (hasFetched && activeTab)">
       <div class="data-header">
-        <h3>📋 订单列表</h3>
-        <span class="data-count">共 {{ orders.length }} 条</span>
+        <h3>{{ tabTitle }}</h3>
+        <div class="data-summary">
+          <span v-if="totalCount > 0">共 <strong>{{ totalCount }}</strong> 条</span>
+          <span v-if="totalCount > 0" class="summary-sep"> | </span>
+          <span>第 <strong>{{ humanCurrentPage }}</strong> / {{ totalPages }} 页</span>
+          <span class="summary-sep"> | </span>
+          <span>本页 {{ orders.length }} 条</span>
+        </div>
+      </div>
+
+      <div class="pagination-bar" v-if="totalCount > currentSize">
+        <button 
+          class="page-btn"
+          @click="prevPage"
+          :disabled="!hasPrevPage || loading"
+        >◀ 上一页</button>
+
+        <span class="page-info">第 {{ humanCurrentPage }} / {{ totalPages }} 页</span>
+
+        <button 
+          class="page-btn"
+          @click="nextPage"
+          :disabled="!hasNextPage || loading"
+        >下一页 ▶</button>
+
+        <span class="page-sep">|</span>
+
+        <select 
+          class="page-size"
+          :value="String(currentSize)"
+          @change="changePageSize(($event.target || {}).value)"
+          :disabled="loading"
+        >
+          <option value="10">每页 10 条</option>
+          <option value="20">每页 20 条</option>
+          <option value="30">每页 30 条</option>
+          <option value="50">每页 50 条</option>
+        </select>
+
+        <span class="page-sep">|</span>
+
+        <input 
+          type="number"
+          min="1"
+          :max="totalPages"
+          class="page-input"
+          v-model="gotoPageInput"
+          placeholder="跳转到"
+          :disabled="loading"
+          @keydown.enter="gotoPage"
+        />
+        <button 
+          class="page-btn small"
+          @click="gotoPage"
+          :disabled="loading"
+        >跳转</button>
       </div>
       
       <div class="order-list">
@@ -54,6 +143,12 @@
             <div class="order-id-section">
               <span class="order-id-label">订单号</span>
               <span class="order-id-value">{{ order.shop_order_id || '-' }}</span>
+              <button 
+                class="btn-copy" 
+                @click="copyText(order.shop_order_id)"
+                :title="'复制订单号'"
+              >复制</button>
+              <span class="meta-tag" v-if="order.product_count">共 {{ order.product_count }} 件</span>
             </div>
             <div class="order-status-section">
               <span :class="['status-badge', getStatusClass(order.order_status)]">
@@ -64,8 +159,21 @@
           </div>
 
           <div class="order-card-body">
+            <!-- 买家留言/卖家备注 -->
+            <div class="remarks-section" v-if="order.buyer_words || order.remark">
+              <div v-if="order.buyer_words" class="remark-item buyer-remark">
+                <span class="remark-label">💬 买家留言:</span>
+                <span class="remark-text">{{ order.buyer_words }}</span>
+              </div>
+              <div v-if="order.remark" class="remark-item seller-remark">
+                <span class="remark-label">📝 卖家备注:</span>
+                <span class="remark-text">{{ order.remark }}</span>
+              </div>
+            </div>
+
             <!-- 商品信息 -->
             <div class="product-section" v-if="order.product_item && order.product_item.length > 0">
+              <div class="section-title">🎁 商品信息</div>
               <div 
                 v-for="(product, pIndex) in order.product_item" 
                 :key="pIndex"
@@ -98,16 +206,17 @@
 
             <!-- 买家信息 -->
             <div class="buyer-section" v-if="order.receiver_info">
-              <div class="section-title">👤 买家信息</div>
+              <div class="section-title">👤 收货信息</div>
               <div class="buyer-info">
-                <p><strong>昵称:</strong> {{ order.user_nickname || '-' }}</p>
+                <p><strong>买家昵称:</strong> {{ order.user_nickname || '-' }}</p>
                 <p><strong>收货人:</strong> {{ order.receiver_info.post_receiver || '-' }}</p>
                 <p><strong>电话:</strong> {{ order.receiver_info.post_tel || '-' }}</p>
                 <p v-if="order.receiver_info.post_addr">
-                  <strong>地址:</strong> 
+                  <strong>地址:</strong>
                   {{ order.receiver_info.post_addr.province?.name || '' }}
                   {{ order.receiver_info.post_addr.city?.name || '' }}
                   {{ order.receiver_info.post_addr.town?.name || '' }}
+                  {{ order.receiver_info.post_addr.street?.name || '' }}
                   {{ order.receiver_info.post_addr.detail || '' }}
                 </p>
               </div>
@@ -150,7 +259,7 @@
 
             <!-- 状态备注 -->
             <div class="remark-section" v-if="order.order_status_info?.order_status_remark">
-              <div class="section-title">📝 状态备注</div>
+              <div class="section-title">⏰ 状态备注</div>
               <p class="status-remark">{{ order.order_status_info.order_status_remark }}</p>
             </div>
 
@@ -175,40 +284,162 @@
     <div class="empty-state" v-else-if="!loading && hasFetched">
       <div class="empty-icon">📭</div>
       <p>暂无订单数据</p>
-      <p class="empty-tip">点击"获取订单数据"按钮获取最新订单</p>
+      <p class="empty-tip">点击上方按钮获取最新订单</p>
     </div>
 
     <div class="error-message" v-if="error">
       <p>❌ {{ error }}</p>
     </div>
+
+    <!-- 原始数据查看面板 -->
+    <div class="raw-data-section" v-if="rawApiResponse">
+      <div class="raw-data-header" @click="showRawData = !showRawData">
+        <h3>🔍 完整原始数据（用于分析可用字段）</h3>
+        <span class="toggle-arrow">{{ showRawData ? '▼' : '▶' }}</span>
+      </div>
+      <div v-if="showRawData" class="raw-data-body">
+        <div class="raw-top-level">
+          <h4>顶层结构：</h4>
+          <pre>{{ rawTopLevelKeys }}</pre>
+        </div>
+        <div class="raw-sample">
+          <h4>第 1 条订单的所有字段（示例）：</h4>
+          <pre>{{ rawSampleOrder }}</pre>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import jinriApiService from '@/services/jinriApiService'
 
 const loading = ref(false)
 const checking = ref(false)
 const hasFetched = ref(false)
+const activeTab = ref('')
 const loginStatus = ref({
   isLoggedIn: false,
   cookieCount: 0
 })
+const debugInfo = ref({
+  code: null,
+  msg: null
+})
 const orders = ref([])
 const error = ref('')
 
+// 分页相关状态
+const currentPage = ref(0)        // 当前页码（0-based，与后端对齐）
+const currentSize = ref(10)       // 当前每页条数
+const totalCount = ref(0)         // 总条数
+const gotoPageInput = ref('')     // 跳转输入框（1-based 人类可读）
+
+// 原始数据查看
+const rawApiResponse = ref(null)
+const showRawData = ref(false)
+
+// 分页计算（1-based 展示）
+const totalPages = computed(() => {
+  const size = currentSize.value || 1
+  return Math.max(1, Math.ceil(totalCount.value / size))
+})
+const humanCurrentPage = computed(() => currentPage.value + 1)
+const hasPrevPage = computed(() => currentPage.value > 0)
+const hasNextPage = computed(() => currentPage.value + 1 < totalPages.value)
+
+// Tab 对应的显示标题
+const tabTitle = computed(() => {
+  const map = {
+    'all': '📋 全部订单',
+    'stock_up': '📦 等待发货',
+    'on_delivery': '🚚 已发货',
+    'unpaid': '💰 待支付'
+  }
+  return map[activeTab.value] || '📋 订单列表'
+})
+
+// 复制文本
+const copyText = async (text) => {
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch (e) {
+    // 兜底方案：创建临时 textarea
+    const tempEl = document.createElement('textarea')
+    tempEl.value = text
+    document.body.appendChild(tempEl)
+    tempEl.select()
+    try {
+      document.execCommand('copy')
+    } catch (_) { /* ignore */ }
+    document.body.removeChild(tempEl)
+  }
+}
+
+// 从原始响应中提取顶层字段，看看有没有 total、current_page 等可用信息
+const rawTopLevelKeys = computed(() => {
+  if (!rawApiResponse.value) return '(暂无)'
+  try {
+    const data = rawApiResponse.value
+    const keys = Object.keys(data)
+    const summary = {}
+    for (const k of keys) {
+      const v = data[k]
+      if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+        summary[k] = `{ ${Object.keys(v).slice(0, 10).join(', ')}${Object.keys(v).length > 10 ? '...' : ''} }`
+      } else if (Array.isArray(v)) {
+        summary[k] = `Array[${v.length}]`
+      } else {
+        summary[k] = v
+      }
+    }
+    return JSON.stringify(summary, null, 2)
+  } catch (e) {
+    return String(rawApiResponse.value)
+  }
+})
+
+// 提取第一条订单的所有字段，用于分析
+const rawSampleOrder = computed(() => {
+  if (!orders.value || orders.value.length === 0) return '(暂无订单数据)'
+  try {
+    return JSON.stringify(orders.value[0], (key, val) => {
+      if (typeof val === 'string' && val.length > 200) return val.slice(0, 200) + '...(截断)'
+      return val
+    }, 2)
+  } catch (e) {
+    return String(orders.value[0])
+  }
+})
+
 // 检查登录状态
+// 注意：不能仅通过 Cookie 是否存在来判断，Cookie 可能已过期
+// 后端会通过实际调用接口验证 Cookie 的有效性
 const checkLoginStatus = async () => {
   checking.value = true
   error.value = ''
-  
+  // 重置调试信息
+  debugInfo.value = { code: null, msg: null }
+
   try {
     const result = await jinriApiService.checkLogin()
+    console.log('[抖店助手] checkLogin 返回:', result)
+
     if (result.success) {
       loginStatus.value = {
         isLoggedIn: result.isLoggedIn,
         cookieCount: result.cookieCount
+      }
+      // 记录调试信息
+      debugInfo.value = {
+        code: result.code ?? null,
+        msg: result.msg ?? null
+      }
+      // 如果后端返回了具体的错误信息（如 Cookie 过期），显示出来
+      if (!result.isLoggedIn && result.msg) {
+        error.value = '🔒 ' + result.msg
       }
     } else {
       error.value = result.error || '检查登录状态失败'
@@ -221,39 +452,52 @@ const checkLoginStatus = async () => {
 }
 
 // 获取订单数据
-const fetchOrders = async () => {
+// @param opts - 选项对象
+// @param opts.tab - 订单类型：'all' | 'stock_up' | 'on_delivery' | 'unpaid'
+// @param opts.page - 当前页码（0-based）
+// @param opts.pageSize - 每页条数
+const fetchOrders = async (opts = {}) => {
+  const tab = typeof opts === 'string' ? opts : (opts.tab || 'all')
+  const page = typeof opts === 'string' ? 0 : (opts.page ?? currentPage.value)
+  const pageSize = typeof opts === 'string' ? currentSize.value : (opts.pageSize ?? currentSize.value)
+
+  // 再次检查登录状态，防止 Cookie 在检查后被清理或过期
+  await checkLoginStatus()
+
   if (!loginStatus.value.isLoggedIn) {
     error.value = '请先登录抖音电商'
     return
   }
 
+  activeTab.value = tab
+  currentPage.value = page
+  currentSize.value = pageSize
   loading.value = true
   error.value = ''
   hasFetched.value = true
 
   try {
     const result = await jinriApiService.getOrderList({
-      page: 0,
-      pageSize: 20,
-      tab: 'all'
+      page: page,
+      pageSize: pageSize,
+      tab: tab
     })
 
     if (result.success) {
-      // 检查是否登录失效
+      // 检查是否登录失效（双重保险）
       if (result.data && result.data.code === '10008') {
         error.value = '🔒 ' + (result.data.msg || '登录信息已失效，请重新登录')
         loginStatus.value.isLoggedIn = false
         orders.value = []
         return
       }
-      
-      // 解析订单数据 - API 返回结构: { data: [订单数组] }
+
+      // 解析订单数据 - API 返回结构: { code: 0, data: [订单数组], total, page, size, ... }
       let orderData = []
-      
-      console.log('API 返回数据:', result.data)
-      
-      if (typeof result.data === 'object' && result.data !== null) {
-        // 直接取 data 数组
+
+      console.log(`[抖店助手][${tab}][page=${page}] API 返回数据:`, result.data)
+
+      if (result.data && typeof result.data === 'object') {
         if (Array.isArray(result.data)) {
           orderData = result.data
         } else if (result.data.data && Array.isArray(result.data.data)) {
@@ -263,14 +507,33 @@ const fetchOrders = async () => {
         } else if (result.data.orders && Array.isArray(result.data.orders)) {
           orderData = result.data.orders
         }
+
+        // 解析分页字段：total / size / page
+        // 优先从外层（result.data 上的字段）取，其次从内层（result.data 下的字段）取
+        const src = result.data
+        const inner = (typeof src === 'object' && src !== null && !Array.isArray(src)) ? src : null
+
+        const totalRaw = inner ? (src.total ?? src.total_count ?? src.totalCount ?? (src.data && (src.data.total ?? src.data.total_count ?? src.data.totalCount))) : null
+        const sizeRaw = inner ? (src.size ?? src.pageSize ?? src.page_size ?? (src.data && (src.data.size ?? src.data.pageSize ?? src.data.page_size))) : null
+        const pageRaw = inner ? (src.page ?? (src.data && src.data.page)) : null
+
+        if (totalRaw !== undefined && totalRaw !== null) {
+          totalCount.value = Number(totalRaw) || 0
+        } else {
+          totalCount.value = orderData.length
+        }
+        if (sizeRaw !== undefined && sizeRaw !== null) {
+          currentSize.value = Number(sizeRaw) || pageSize
+        }
+        if (pageRaw !== undefined && pageRaw !== null) {
+          const p = Number(pageRaw)
+          currentPage.value = Number.isFinite(p) ? p : page
+        }
       }
 
       orders.value = orderData
-      console.log('解析后的订单数据:', orderData)
-      
-      if (orderData.length === 0) {
-        console.log('未找到订单数据，API 返回:', result.data)
-      }
+      rawApiResponse.value = result.data
+      console.log(`[抖店助手][${tab}] 解析: total=${totalCount.value}, page=${currentPage.value}(0-based), size=${currentSize.value}, 当前页订单=${orderData.length}`)
     } else {
       error.value = result.error || '获取订单失败'
       orders.value = []
@@ -281,6 +544,39 @@ const fetchOrders = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 分页：上一页
+const prevPage = () => {
+  if (!hasPrevPage.value) return
+  fetchOrders({ tab: activeTab.value, page: currentPage.value - 1, pageSize: currentSize.value })
+}
+
+// 分页：下一页
+const nextPage = () => {
+  if (!hasNextPage.value) return
+  fetchOrders({ tab: activeTab.value, page: currentPage.value + 1, pageSize: currentSize.value })
+}
+
+// 分页：跳转到指定页（输入框为 1-based，传参 -1 变成 0-based）
+const gotoPage = () => {
+  const raw = String(gotoPageInput.value || '').trim()
+  if (!raw) return
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 1) {
+    error.value = '页码必须是大于等于 1 的数字'
+    return
+  }
+  const page0Based = Math.min(Math.floor(n) - 1, totalPages.value - 1)
+  gotoPageInput.value = ''
+  fetchOrders({ tab: activeTab.value, page: page0Based, pageSize: currentSize.value })
+}
+
+// 分页：切换每页条数
+const changePageSize = (size) => {
+  const s = Number(size)
+  if (!Number.isFinite(s) || s <= 0) return
+  fetchOrders({ tab: activeTab.value, page: 0, pageSize: s })
 }
 
 // 格式化金额（分转元）
@@ -414,6 +710,22 @@ onMounted(() => {
   background: #FFEBEE;
 }
 
+.status-value.checking {
+  color: #FF9800;
+  background: #FFF3E0;
+}
+
+.loading-spinner-inline {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+.debug-info {
+  margin-top: 8px;
+  color: #888;
+  font-size: 12px;
+}
+
 .cookie-count {
   color: #666;
   font-size: 14px;
@@ -445,13 +757,16 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
-.btn-fetch,
+.btn-tab,
 .btn-refresh {
   padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
+  border: 2px solid #E0E0E0;
+  background: #FAFAFA;
+  color: #555;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -461,35 +776,55 @@ onMounted(() => {
   gap: 8px;
 }
 
-.btn-fetch {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-  color: white;
-}
-
-.btn-fetch:hover:not(:disabled) {
-  background: linear-gradient(135deg, #45a049 0%, #388E3C 100%);
+.btn-tab:hover:not(:disabled) {
+  background: #F5F5F5;
+  border-color: #BDBDBD;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
-.btn-fetch:disabled {
-  background: #ccc;
+.btn-tab:disabled,
+.btn-refresh:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-refresh {
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+/* 当前选中的 tab 高亮 */
+.btn-tab.active {
+  background: #1976D2;
+  border-color: #1976D2;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.25);
+}
+
+.btn-tab.btn-warn {
+  border-color: #FFE0B2;
+}
+.btn-tab.btn-warn.active {
+  background: #F57C00;
+  border-color: #F57C00;
+  box-shadow: 0 4px 12px rgba(245, 124, 0, 0.25);
+}
+
+.btn-tab.btn-info {
+  border-color: #B3E5FC;
+}
+.btn-tab.btn-info.active {
+  background: #0288D1;
+  border-color: #0288D1;
+  box-shadow: 0 4px 12px rgba(2, 136, 209, 0.25);
+}
+
+.btn-tab.btn-danger {
+  border-color: #FFCDD2;
+}
+.btn-tab.btn-danger.active {
+  background: #C62828;
+  border-color: #C62828;
+  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25);
 }
 
 .btn-refresh:hover:not(:disabled) {
   background: #e0e0e0;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .loading-spinner {
@@ -516,6 +851,8 @@ onMounted(() => {
   padding: 16px 20px;
   border-bottom: 1px solid #eee;
   background: #fafafa;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .data-header h3 {
@@ -523,9 +860,102 @@ onMounted(() => {
   color: #333;
 }
 
-.data-count {
+.data-summary {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.data-summary strong {
+  color: #1976D2;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+.summary-sep {
+  color: #ccc;
+  margin: 0 4px;
+}
+
+/* 分页栏 */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  padding: 6px 14px;
+  border: 1px solid #BDBDBD;
+  background: #fff;
+  color: #333;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #E3F2FD;
+  border-color: #1976D2;
+  color: #1976D2;
+}
+
+.page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.page-btn.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.page-info {
+  color: #555;
+  font-size: 13px;
+}
+
+.page-sep {
+  color: #ccc;
+}
+
+.page-size {
+  padding: 6px 10px;
+  border: 1px solid #BDBDBD;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.page-size:focus {
+  outline: none;
+  border-color: #1976D2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+
+.page-input {
+  padding: 6px 10px;
+  border: 1px solid #BDBDBD;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 70px;
+  background: #fff;
+  color: #333;
+}
+
+.page-input:focus {
+  outline: none;
+  border-color: #1976D2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
 }
 
 .order-list {
@@ -558,8 +988,9 @@ onMounted(() => {
 
 .order-id-section {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .order-id-label {
@@ -572,6 +1003,31 @@ onMounted(() => {
   color: #333;
   font-family: monospace;
   font-size: 14px;
+}
+
+.btn-copy {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #BDBDBD;
+  background: #fff;
+  color: #555;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-copy:hover {
+  background: #E3F2FD;
+  border-color: #1976D2;
+  color: #1976D2;
+}
+
+.meta-tag {
+  padding: 2px 8px;
+  background: #F5F5F5;
+  color: #666;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 .order-status-section {
@@ -631,6 +1087,50 @@ onMounted(() => {
   color: #333;
   margin-bottom: 8px;
   font-size: 14px;
+}
+
+/* 订单头部/买家留言/卖家备注 */
+.remarks-section {
+  grid-column: 1 / -1;
+  background: #FFF9C4;
+  border-left: 4px solid #FBC02D;
+  padding: 12px 16px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remark-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.remark-label {
+  font-weight: 600;
+  white-space: nowrap;
+  color: #6D4C41;
+}
+
+.remark-item.buyer-remark .remark-label {
+  color: #5D4037;
+}
+
+.remark-item.seller-remark {
+  background: #FFECB3;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.remark-item.seller-remark .remark-label {
+  color: #1565C0;
+}
+
+.remark-text {
+  color: #4E342E;
+  line-height: 1.5;
 }
 
 /* 商品信息 */
@@ -825,5 +1325,64 @@ onMounted(() => {
 .error-message p {
   margin: 0;
   color: #C62828;
+}
+
+/* 原始数据查看面板样式 */
+.raw-data-section {
+  margin-top: 24px;
+  background: #FAFAFA;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.raw-data-header {
+  padding: 12px 20px;
+  background: #ECEFF1;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.raw-data-header h3 {
+  margin: 0;
+  color: #37474F;
+  font-size: 14px;
+}
+
+.toggle-arrow {
+  color: #78909C;
+  font-size: 12px;
+}
+
+.raw-data-body {
+  padding: 16px 20px;
+}
+
+.raw-data-body h4 {
+  margin: 0 0 8px 0;
+  color: #546E7A;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.raw-data-body pre {
+  margin: 0 0 16px 0;
+  padding: 12px;
+  background: #263238;
+  color: #ECEFF1;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 500px;
+  overflow: auto;
+}
+
+.raw-data-body pre:last-child {
+  margin-bottom: 0;
 }
 </style>
