@@ -161,7 +161,7 @@ async function fetchState() {
   if (typeof chrome !== 'undefined' && chrome.runtime) {
     try {
       const state = await chrome.runtime.sendMessage({ action: 'wsGetState' })
-      if (state) wsState.value = state.connectionState
+      if (state) wsState.value = state.state
     } catch (e) {
       console.error('获取状态失败:', e)
     }

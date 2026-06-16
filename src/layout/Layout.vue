@@ -24,9 +24,6 @@
     </aside>
 
     <main class="content-wrapper">
-      <header class="content-header">
-        <h1>{{ $route.meta.title }}</h1>
-      </header>
       <div class="content-body">
         <router-view />
       </div>
@@ -158,19 +155,6 @@ const menus = ref([
   background: #1a1a1a;
   margin: 0;
   padding: 0;
-}
-
-.content-header {
-  padding: 30px 50px;
-  background: #1a1a1a;
-  border-bottom: 1px solid #3d3d3d;
-}
-
-.content-header h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: #ffffff;
 }
 
 .content-body {
