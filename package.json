@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "build:debug": "vite build --mode development --debug",
+    "build": "vite build --outDir extension",
+    "build:dev": "vite build --mode development --outDir extension",
+    "build:debug": "vite build --mode development --debug --outDir extension",
     "preview": "vite preview",
-    "build:extension": "vite build --mode extension",
+    "build:extension": "vite build --mode extension --outDir extension",
     "dev:extension": "vite --mode extension"
   },
   "dependencies": {

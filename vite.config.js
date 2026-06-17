@@ -6,7 +6,7 @@ import { writeFileSync, mkdirSync, existsSync, cpSync, renameSync, readFileSync 
 
 function copyNonHtmlToDist() {
   const publicDir = resolve(__dirname, 'public')
-  const distDir = resolve(__dirname, 'dist')
+  const distDir = resolve(__dirname, 'extension')
 
   if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true })

@@ -9,7 +9,7 @@ import LocalPrinters from '../views/admin/LocalPrinters.vue'
 import Templates from '../views/admin/Templates.vue'
 import SystemSettings from '../views/admin/SystemSettings.vue'
 import WebSocketLog from '../views/admin/WebSocketLog.vue'
-import DouDianAssistant from '../views/admin/doudian/index.vue'
+import DouDianAssistant from '../views/admin/Doudian.vue'
 import TemplateEditor from '../views/admin/TemplateEditor/TemplateEditor.vue'
 
 const routes = [
