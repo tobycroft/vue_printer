@@ -40,11 +40,23 @@
         @change="handlePresetChange"
       >
         <option value="">自定义</option>
-        <option value="A4">A4 (210×297)</option>
-        <option value="A5">A5 (148×210)</option>
-        <option value="B5">B5 (176×250)</option>
-        <option value="Letter">Letter (216×279)</option>
-        <option value="BusinessCard">名片 (90×54)</option>
+        <optgroup label="标准纸张">
+          <option value="A4">A4 (210×297)</option>
+          <option value="A5">A5 (148×210)</option>
+          <option value="B5">B5 (176×250)</option>
+          <option value="Letter">Letter (216×279)</option>
+          <option value="BusinessCard">名片 (90×54)</option>
+        </optgroup>
+        <optgroup label="快递二联单">
+          <option value="ExpressTwoPart">快递二联单 (100×180)</option>
+        </optgroup>
+        <optgroup label="快递一联单">
+          <option value="ExpressOnePart">快递一联单 (76×130)</option>
+        </optgroup>
+        <optgroup label="小单">
+          <option value="Small_40x50">小单 (40×50)</option>
+          <option value="Small_40x60">小单 (40×60)</option>
+        </optgroup>
       </select>
     </div>
   </div>

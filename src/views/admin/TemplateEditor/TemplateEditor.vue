@@ -46,11 +46,23 @@
               @change="applyPaperPreset(paperPreset)"
             >
               <option value="">自定义</option>
-              <option value="A4">A4 (210×297)</option>
-              <option value="A5">A5 (148×210)</option>
-              <option value="B5">B5 (176×250)</option>
-              <option value="Letter">Letter (216×279)</option>
-              <option value="BusinessCard">名片 (90×54)</option>
+              <optgroup label="标准纸张">
+                <option value="A4">A4 (210×297)</option>
+                <option value="A5">A5 (148×210)</option>
+                <option value="B5">B5 (176×250)</option>
+                <option value="Letter">Letter (216×279)</option>
+                <option value="BusinessCard">名片 (90×54)</option>
+              </optgroup>
+              <optgroup label="快递二联单">
+                <option value="ExpressTwoPart">快递二联单 (100×180)</option>
+              </optgroup>
+              <optgroup label="快递一联单">
+                <option value="ExpressOnePart">快递一联单 (76×130)</option>
+              </optgroup>
+              <optgroup label="小单">
+                <option value="Small_40x50">小单 (40×50)</option>
+                <option value="Small_40x60">小单 (40×60)</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -151,7 +163,11 @@ const presetSizes = {
   'A5': { width: 148, height: 210 },
   'B5': { width: 176, height: 250 },
   'Letter': { width: 216, height: 279 },
-  'BusinessCard': { width: 90, height: 54 }
+  'BusinessCard': { width: 90, height: 54 },
+  'ExpressTwoPart': { width: 100, height: 180 },
+  'ExpressOnePart': { width: 76, height: 130 },
+  'Small_40x50': { width: 40, height: 50 },
+  'Small_40x60': { width: 40, height: 60 }
 }
 
 // 应用纸张预设
