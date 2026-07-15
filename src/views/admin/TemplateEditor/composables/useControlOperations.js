@@ -67,6 +67,7 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
           ...baseData,
           placeholderMode: 'prefix',
           placeholderText: backendControl.content || '',
+          dataField: backendControl.tag && backendControl.tag !== 'data_text' ? backendControl.tag : '',
           fontSize: backendControl.font_size || 14,
           fontWeight: backendControl.font_weight || 'normal',
           align: backendControl.align || 'left'
@@ -103,7 +104,7 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
     return {
       template_id: template.id,
       type: control.type,
-      tag: control.type, // 使用 type 作为 tag
+      tag: control.dataField || control.type,
       content: content,
       font_size: control.fontSize || 14,
       font_weight: control.fontWeight || 'normal',
@@ -181,7 +182,7 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
     const actualY = Math.round(y / ratio)
 
     // 创建临时控件（不添加到本地，直接调用API）
-    const tempControl = createLocalControl(draggedWidget.value.type, actualX, actualY)
+    const tempControl = createLocalControl(draggedWidget.value, actualX, actualY)
     
     // 调用后端添加接口
     controlsLoading.value = true
@@ -480,17 +481,22 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
     const heightRatio = paperHeight / 297
     const avgRatio = (widthRatio + heightRatio) / 2
     
+    // 默认字体大小：基于 A4 基准 14pt，按比例缩放，最小 6pt
+    const defaultFontSize = Math.max(6, Math.round(14 * avgRatio))
+    
     // 根据控件类型和纸张大小计算合适的默认尺寸
     switch (type) {
       case 'text':
         return {
-          width: Math.round(Math.min(100 * widthRatio, paperWidth * 0.4)), // 最大占纸张宽度的 40%
-          height: Math.round(Math.min(30 * heightRatio, paperHeight * 0.08)) // 最大占纸张高度的 8%
+          width: Math.round(Math.min(100 * widthRatio, paperWidth * 0.4)),
+          height: Math.round(Math.min(30 * heightRatio, paperHeight * 0.08)),
+          fontSize: defaultFontSize
         }
       case 'data_text':
         return {
           width: Math.round(Math.min(120 * widthRatio, paperWidth * 0.5)),
-          height: Math.round(Math.min(30 * heightRatio, paperHeight * 0.08))
+          height: Math.round(Math.min(30 * heightRatio, paperHeight * 0.08)),
+          fontSize: defaultFontSize
         }
       case 'line':
         return {
@@ -511,7 +517,10 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
   }
 
   // 创建本地控件数据
-  const createLocalControl = (type, x, y) => {
+  const createLocalControl = (widget, x, y) => {
+    const type = widget.type || widget
+    const dataField = widget.dataField || ''
+    
     // 获取基于纸张大小的默认尺寸
     const defaultSize = getDefaultControlSize(type)
     
@@ -529,7 +538,7 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
         return {
           ...baseData,
           text: '新文本',
-          fontSize: 14,
+          fontSize: defaultSize.fontSize || 14,
           fontWeight: 'normal',
           align: 'left'
         }
@@ -538,7 +547,8 @@ export default function useControlOperations(template, selectedControl, mmToPxRa
           ...baseData,
           placeholderMode: 'prefix',
           placeholderText: '',
-          fontSize: 14,
+          dataField: dataField,
+          fontSize: defaultSize.fontSize || 14,
           fontWeight: 'normal',
           align: 'left'
         }

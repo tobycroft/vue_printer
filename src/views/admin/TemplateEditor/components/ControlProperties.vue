@@ -91,6 +91,49 @@
     <!-- 数据文本 -->
     <template v-else-if="control.type === 'data_text'">
       <div class="property-group">
+        <label>数据字段</label>
+        <select 
+          v-model="control.dataField" 
+          class="form-control"
+          @change="$emit('update', control)"
+        >
+          <option value="">-- 无（通用数据文本）--</option>
+          <optgroup label="订单信息">
+            <option value="shop_order_id">订单号</option>
+            <option value="order_status_text">订单状态</option>
+            <option value="pay_type_desc">支付方式</option>
+            <option value="create_time">下单时间</option>
+            <option value="pay_time">付款时间</option>
+            <option value="exp_ship_time">发货截止</option>
+            <option value="user_nickname">买家昵称</option>
+            <option value="buyer_words">买家留言</option>
+            <option value="remark">卖家备注</option>
+          </optgroup>
+          <optgroup label="金额信息">
+            <option value="pay_amount">商品总额</option>
+            <option value="post_amount">运费</option>
+            <option value="actual_pay_amount">实付金额</option>
+            <option value="actual_receive_amount">商家收入</option>
+          </optgroup>
+          <optgroup label="收货信息">
+            <option value="post_receiver">收货人</option>
+            <option value="post_tel">联系电话</option>
+            <option value="full_address">完整地址</option>
+            <option value="province">省</option>
+            <option value="city">市</option>
+            <option value="town">区/县</option>
+            <option value="street">街道</option>
+            <option value="detail">详细地址</option>
+          </optgroup>
+          <optgroup label="商品信息">
+            <option value="product_name">商品名称</option>
+            <option value="product_count">商品数量</option>
+            <option value="product_pay_amount">商品单价</option>
+            <option value="sku_specs">SKU规格</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="property-group">
         <label>占位模式</label>
         <select 
           v-model="control.placeholderMode" 
@@ -266,6 +309,10 @@ const props = defineProps({
   control: {
     type: Object,
     required: true
+  },
+  dataFields: {
+    type: Object,
+    default: () => ({})
   }
 })
 

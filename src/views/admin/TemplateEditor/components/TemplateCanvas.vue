@@ -65,11 +65,21 @@
         
         <!-- 数据文本 -->
         <template v-else-if="control.type === 'data_text'">
-          <template v-if="control.placeholderMode === 'prefix'">
-            {{ control.placeholderText || '占位文本' }}[数据文本]
+          <template v-if="control.dataField">
+            <template v-if="control.placeholderMode === 'prefix'">
+              {{ control.placeholderText || '' }}[{{ getDataFieldName(control.dataField) }}]
+            </template>
+            <template v-else>
+              [{{ getDataFieldName(control.dataField) }}]{{ control.placeholderText || '' }}
+            </template>
           </template>
           <template v-else>
-            [数据文本]{{ control.placeholderText || '占位文本' }}
+            <template v-if="control.placeholderMode === 'prefix'">
+              {{ control.placeholderText || '占位文本' }}[数据文本]
+            </template>
+            <template v-else>
+              [数据文本]{{ control.placeholderText || '占位文本' }}
+            </template>
           </template>
         </template>
         
@@ -118,6 +128,39 @@ const props = defineProps({
     default: 3.78 // 默认约 1mm = 3.78px (96dpi)
   }
 })
+
+// 数据字段名称映射
+const DATA_FIELD_NAMES = {
+  shop_order_id: '订单号',
+  order_status_text: '订单状态',
+  pay_type_desc: '支付方式',
+  create_time: '下单时间',
+  pay_time: '付款时间',
+  exp_ship_time: '发货截止',
+  user_nickname: '买家昵称',
+  buyer_words: '买家留言',
+  remark: '卖家备注',
+  pay_amount: '商品总额',
+  post_amount: '运费',
+  actual_pay_amount: '实付金额',
+  actual_receive_amount: '商家收入',
+  post_receiver: '收货人',
+  post_tel: '联系电话',
+  full_address: '完整地址',
+  province: '省',
+  city: '市',
+  town: '区/县',
+  street: '街道',
+  detail: '详细地址',
+  product_name: '商品名称',
+  product_count: '商品数量',
+  product_pay_amount: '商品单价',
+  sku_specs: 'SKU规格'
+}
+
+const getDataFieldName = (dataField) => {
+  return DATA_FIELD_NAMES[dataField] || dataField || '数据文本'
+}
 
 const getControlStyle = (control) => {
   const ratio = props.mmToPxRatio

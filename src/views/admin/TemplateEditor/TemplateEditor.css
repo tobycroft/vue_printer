@@ -233,6 +233,21 @@
   color: #f56c6c;
 }
 
+.editor-sidebar .widget-list .widget-category-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  padding: 8px 4px 4px 4px;
+  margin-top: 8px;
+  border-bottom: 1px solid #4d4d4d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.editor-sidebar .widget-list .widget-category-label:first-child {
+  margin-top: 0;
+}
+
 .editor-sidebar .widget-list .widget-item {
   display: flex;
   align-items: center;

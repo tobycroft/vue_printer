@@ -80,6 +80,7 @@
         <ControlProperties
           v-if="selectedControl"
           :control="selectedControl"
+          :data-fields="DATA_FIELDS"
           @update="watchControlUpdates"
           @delete="handleDeleteControl"
         />
@@ -186,6 +187,7 @@ const {
   canvasWrapperRef,
   selectedControl,
   availableWidgets,
+  DATA_FIELDS,
   loading,
   saving,
   goBack,

@@ -95,11 +95,65 @@ export default function useTemplateEditor(template, isEditing, router) {
     return Math.round(userZoom.value * 100)
   })
 
+  // 数据字段定义（基于抖店订单数据结构）
+  const DATA_FIELDS = {
+    shop_order_id: { name: '订单号', icon: '🔢' },
+    order_status_text: { name: '订单状态', icon: '📋' },
+    pay_type_desc: { name: '支付方式', icon: '💳' },
+    create_time: { name: '下单时间', icon: '🕐' },
+    pay_time: { name: '付款时间', icon: '🕑' },
+    exp_ship_time: { name: '发货截止', icon: '⏰' },
+    user_nickname: { name: '买家昵称', icon: '👤' },
+    buyer_words: { name: '买家留言', icon: '💬' },
+    remark: { name: '卖家备注', icon: '📝' },
+    pay_amount: { name: '商品总额', icon: '💰' },
+    post_amount: { name: '运费', icon: '🚚' },
+    actual_pay_amount: { name: '实付金额', icon: '💵' },
+    actual_receive_amount: { name: '商家收入', icon: '🏪' },
+    post_receiver: { name: '收货人', icon: '🙋' },
+    post_tel: { name: '联系电话', icon: '📞' },
+    full_address: { name: '完整地址', icon: '📍' },
+    province: { name: '省', icon: '🏛️' },
+    city: { name: '市', icon: '🏙️' },
+    town: { name: '区/县', icon: '🏘️' },
+    street: { name: '街道', icon: '🛣️' },
+    detail: { name: '详细地址', icon: '🏠' },
+    product_name: { name: '商品名称', icon: '🏷️' },
+    product_count: { name: '商品数量', icon: '📦' },
+    product_pay_amount: { name: '商品单价', icon: '💲' },
+    sku_specs: { name: 'SKU规格', icon: '📐' }
+  }
+
   const availableWidgets = [
     { type: 'text', name: '固定文本', icon: '📝' },
     { type: 'data_text', name: '数据文本', icon: '📊' },
     { type: 'line', name: '线条', icon: '📏' },
-    { type: 'image', name: '图片', icon: '🖼️' }
+    { type: 'image', name: '图片', icon: '🖼️' },
+    { type: 'data_text', name: '订单号', icon: '🔢', dataField: 'shop_order_id', category: '订单信息' },
+    { type: 'data_text', name: '订单状态', icon: '📋', dataField: 'order_status_text', category: '订单信息' },
+    { type: 'data_text', name: '支付方式', icon: '💳', dataField: 'pay_type_desc', category: '订单信息' },
+    { type: 'data_text', name: '下单时间', icon: '🕐', dataField: 'create_time', category: '订单信息' },
+    { type: 'data_text', name: '付款时间', icon: '🕑', dataField: 'pay_time', category: '订单信息' },
+    { type: 'data_text', name: '发货截止', icon: '⏰', dataField: 'exp_ship_time', category: '订单信息' },
+    { type: 'data_text', name: '买家昵称', icon: '👤', dataField: 'user_nickname', category: '订单信息' },
+    { type: 'data_text', name: '买家留言', icon: '💬', dataField: 'buyer_words', category: '订单信息' },
+    { type: 'data_text', name: '卖家备注', icon: '📝', dataField: 'remark', category: '订单信息' },
+    { type: 'data_text', name: '商品总额', icon: '💰', dataField: 'pay_amount', category: '金额信息' },
+    { type: 'data_text', name: '运费', icon: '🚚', dataField: 'post_amount', category: '金额信息' },
+    { type: 'data_text', name: '实付金额', icon: '💵', dataField: 'actual_pay_amount', category: '金额信息' },
+    { type: 'data_text', name: '商家收入', icon: '🏪', dataField: 'actual_receive_amount', category: '金额信息' },
+    { type: 'data_text', name: '收货人', icon: '🙋', dataField: 'post_receiver', category: '收货信息' },
+    { type: 'data_text', name: '联系电话', icon: '📞', dataField: 'post_tel', category: '收货信息' },
+    { type: 'data_text', name: '完整地址', icon: '📍', dataField: 'full_address', category: '收货信息' },
+    { type: 'data_text', name: '省', icon: '🏛️', dataField: 'province', category: '收货信息' },
+    { type: 'data_text', name: '市', icon: '🏙️', dataField: 'city', category: '收货信息' },
+    { type: 'data_text', name: '区/县', icon: '🏘️', dataField: 'town', category: '收货信息' },
+    { type: 'data_text', name: '街道', icon: '🛣️', dataField: 'street', category: '收货信息' },
+    { type: 'data_text', name: '详细地址', icon: '🏠', dataField: 'detail', category: '收货信息' },
+    { type: 'data_text', name: '商品名称', icon: '🏷️', dataField: 'product_name', category: '商品信息' },
+    { type: 'data_text', name: '商品数量', icon: '📦', dataField: 'product_count', category: '商品信息' },
+    { type: 'data_text', name: '商品单价', icon: '💲', dataField: 'product_pay_amount', category: '商品信息' },
+    { type: 'data_text', name: 'SKU规格', icon: '📐', dataField: 'sku_specs', category: '商品信息' }
   ]
 
   const goBack = () => {
@@ -281,6 +335,7 @@ export default function useTemplateEditor(template, isEditing, router) {
     canvasWrapperRef,
     selectedControl,
     availableWidgets,
+    DATA_FIELDS,
     loading,
     saving,
     currentZoomPercent,
